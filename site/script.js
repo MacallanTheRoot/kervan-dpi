@@ -119,7 +119,7 @@ async function resolveLatestWindowsRelease() {
       Array.isArray(release.assets) &&
       release.assets.some((asset) => asset.state === 'uploaded' && (
         asset.name === 'Kervan-DPI.exe' ||
-        /^Kervan-DPI-.*-windows-portable\\.zip$/i.test(asset.name)
+        /^Kervan-DPI-.*-windows-portable\.zip$/i.test(asset.name)
       ))
     );
     candidates.sort((a, b) => Date.parse(b.published_at || 0) - Date.parse(a.published_at || 0));
