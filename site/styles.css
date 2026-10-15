@@ -96,12 +96,14 @@ h1, h2, h3 { margin-top: 0; }
 
 .section-status { background: var(--paper); }
 .status-list { border-top: 1px solid var(--line); }
-.status-row { display: grid; grid-template-columns: 115px minmax(0, 1fr) 116px; gap: 20px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--line); transition: background-color .18s ease; }
+.status-row { display: grid; grid-template-columns: 115px minmax(0, 1fr) 144px; gap: 20px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--line); transition: background-color .18s ease; }
 .status-row:hover { background-color: rgba(8, 103, 159, .035); }
 .status-name h3 { margin: 0; font-size: 18px; font-weight: 700; line-height: 1.35; }
 .status-name span { display: block; margin-top: 2px; color: var(--muted); font-family: Consolas, 'Liberation Mono', monospace; font-size: 12px; }
 .status-row p { margin: 0; color: var(--body); font-size: 15px; line-height: 1.6; }
 .status-row > strong { color: #23526c; font-size: 13px; font-weight: 650; text-align: right; line-height: 1.5; }
+.status-release-link { display: inline-flex; min-height: 44px; padding: 9px 12px; align-items: center; justify-content: center; justify-self: end; border: 1px solid var(--blue); color: var(--blue); font-size: 13px; font-weight: 700; line-height: 1.4; text-align: center; transition: color .18s ease, background-color .18s ease; }
+.status-release-link:hover { color: #fff; background: var(--blue); }
 
 .section-story { color: #edf2f4; background: var(--navy); }
 .section-story .section-index { color: #81d2fb; }
@@ -157,6 +159,7 @@ h1, h2, h3 { margin-top: 0; }
   .section { padding-block: 88px; }
   .status-row { grid-template-columns: 105px minmax(0, 1fr); gap: 8px 18px; }
   .status-row > strong { grid-column: 2; text-align: left; }
+  .status-release-link { grid-column: 2; justify-self: start; }
   .packet-figure figcaption { display: block; }
   .packet-art { max-width: 500px; margin-inline: auto; }
   .diagram-note { margin-top: 16px; }
