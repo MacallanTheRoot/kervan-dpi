@@ -26,7 +26,7 @@ const translations = {
     flowLabel: 'Application workflow',
     flow1: 'Choose settings',
     flow3: 'Check status',
-    productWindows: 'Controls the bundled GoodbyeDPI and WinDivert components. Windows v1.0.1-rc2 is available as a prerelease; full native QA remains pending.',
+    productWindows: 'Controls the bundled GoodbyeDPI and WinDivert components. Windows releases are available on GitHub; prereleases may still require full native QA.',
     productLinux: 'Can start a separately installed SpoofDPI local HTTP proxy. The browser or application must explicitly use that proxy.',
     diagramIndex: '02 / Diagram',
     diagramTitle: 'Inside a packet',
@@ -38,8 +38,8 @@ const translations = {
     diagramNote: 'Conceptual drawing only. It does not depict an exact packet format, traffic routing, or verified system-wide bypass.',
     statusIndex: '03 / Status',
     statusTitle: 'Current status',
-    statusAside: 'The Windows prerelease is available; Linux and mobile releases are not yet published.',
-    statusWindows: 'The Windows prerelease is published. Full real-device QA is still pending.',
+    statusAside: 'Windows releases are available; Linux and mobile releases are not yet published.',
+    statusWindows: 'Windows releases are published. Prereleases may not yet have completed full real-device QA.',
     statusLinux: 'Offline tests passed. Native system-wide bypass has not yet been verified.',
     statusUnpublished: 'Unpublished',
     statusAndroid: 'A mobile app is planned; no tested release exists.',
@@ -56,8 +56,8 @@ const translations = {
     docsLink: 'Documentation',
     contributeLink: 'Contribute or report an issue',
     releasesLink: 'All releases',
-    releaseLabel: 'Windows prerelease',
-    releaseBody: 'Windows v1.0.1-rc2 is available as a prerelease. Linux K4 has not been published.',
+    releaseLabel: 'Windows releases',
+    releaseBody: 'Browse Windows releases on GitHub Releases. Linux K4 has not been published.',
     boundaryNote: 'Kervan DPI is not a VPN, anonymity tool, or IP masking tool. It cannot guarantee access on every network.',
     licenseNote: 'The application code is MIT licensed. GoodbyeDPI, WinDivert, SpoofDPI, and Zapret2 are independent upstream projects; their licenses and notices are documented separately.',
     footerCredit: 'Developed by MacallanTheRoot.',
@@ -82,47 +82,69 @@ document.querySelectorAll('[data-i18n], [data-i18n-aria], [data-i18n-alt]').forE
 
 const windowsReleaseLink = document.querySelector('#windows-release-link');
 const windowsReleaseVersion = document.querySelector('#windows-release-version');
+const windowsReleasesPage = 'https://github.com/MacallanTheRoot/kervan-dpi/releases';
 const releaseLabels = {
-  tr: { prerelease: 'Son ön sürüm ↗', stable: 'Son sürüm ↗', aria: 'Son Windows sürümünü GitHub’da aç' },
-  en: { prerelease: 'Latest pre-release ↗', stable: 'Latest release ↗', aria: 'Open the latest Windows release on GitHub' }
+  tr: {
+    prerelease: 'Son ön sürüm ↗',
+    stable: 'Son sürüm ↗',
+    fallback: 'Sürümleri gör ↗',
+    aria: 'Son Windows sürümünü GitHub’da aç',
+    fallbackAria: 'Windows sürümlerini GitHub’da aç'
+  },
+  en: {
+    prerelease: 'Latest pre-release ↗',
+    stable: 'Latest release ↗',
+    fallback: 'View releases ↗',
+    aria: 'Open the latest Windows release on GitHub',
+    fallbackAria: 'View Windows releases on GitHub'
+  }
 };
-let latestWindowsRelease = {
-  url: 'https://github.com/MacallanTheRoot/kervan-dpi/releases/tag/v1.0.1-rc2',
-  version: 'v1.0.1-rc2',
-  prerelease: true
-};
+
+// On network errors or GitHub API rate limits, link to the live Releases list,
+// not an old fixed release tag. No per-release HTML edits are necessary.
+let latestWindowsRelease = null;
 
 function updateWindowsReleaseLink(language) {
   const label = releaseLabels[language];
-  windowsReleaseLink.href = latestWindowsRelease.url;
-  windowsReleaseLink.textContent = latestWindowsRelease.prerelease ? label.prerelease : label.stable;
-  windowsReleaseLink.setAttribute('aria-label', label.aria);
-  windowsReleaseVersion.textContent = latestWindowsRelease.version;
+  windowsReleaseLink.href = latestWindowsRelease?.url || windowsReleasesPage;
+  windowsReleaseLink.textContent = !latestWindowsRelease
+    ? label.fallback
+    : latestWindowsRelease.prerelease ? label.prerelease : label.stable;
+  windowsReleaseLink.setAttribute(
+    'aria-label', latestWindowsRelease ? label.aria : label.fallbackAria
+  );
+  windowsReleaseVersion.textContent = latestWindowsRelease?.version || 'Windows x64';
 }
 
-// GitHub's /releases/latest redirects to stable releases only, skipping prereleases.
-// Query the public releases API to include published prereleases with Windows binaries.
-// A verified RC2 link remains usable when the API is unavailable or rate limited.
+// /releases/latest excludes prereleases, so discover the newest published Windows
+// binary through the GitHub Releases API. Ignore Linux-only and source-only releases.
 async function resolveLatestWindowsRelease() {
   try {
-    const response = await fetch('https://api.github.com/repos/MacallanTheRoot/kervan-dpi/releases?per_page=30', {
-      headers: { Accept: 'application/vnd.github+json' }
-    });
+    const response = await fetch(
+      'https://api.github.com/repos/MacallanTheRoot/kervan-dpi/releases?per_page=100',
+      { headers: { Accept: 'application/vnd.github+json' } }
+    );
     if (!response.ok) return;
     const releases = await response.json();
     if (!Array.isArray(releases)) return;
+    const isWindowsAsset = (asset) =>
+      asset.state === 'uploaded' &&
+      typeof asset.name === 'string' &&
+      (/^Kervan[-_. ]?DPI.*\.exe$/i.test(asset.name) ||
+        (/^Kervan[-_. ]?DPI.*windows.*\.zip$/i.test(asset.name) &&
+          !/source|symbols|debug/i.test(asset.name)));
     const candidates = releases.filter((release) =>
       !release.draft &&
+      typeof release.published_at === 'string' &&
       typeof release.html_url === 'string' &&
-      release.html_url.startsWith('https://github.com/MacallanTheRoot/kervan-dpi/releases/tag/') &&
+      release.html_url.startsWith(windowsReleasesPage + '/tag/') &&
       typeof release.tag_name === 'string' &&
       Array.isArray(release.assets) &&
-      release.assets.some((asset) => asset.state === 'uploaded' && (
-        asset.name === 'Kervan-DPI.exe' ||
-        /^Kervan-DPI-.*-windows-portable\.zip$/i.test(asset.name)
-      ))
+      release.assets.some(isWindowsAsset)
     );
-    candidates.sort((a, b) => Date.parse(b.published_at || 0) - Date.parse(a.published_at || 0));
+    candidates.sort((a, b) =>
+      Date.parse(b.published_at) - Date.parse(a.published_at)
+    );
     const latest = candidates[0];
     if (!latest) return;
     latestWindowsRelease = {
@@ -132,7 +154,7 @@ async function resolveLatestWindowsRelease() {
     };
     updateWindowsReleaseLink(document.documentElement.lang);
   } catch (_) {
-    // Network/API failures must not break the site's static release link.
+    // The Releases page remains a working fallback even without the API.
   }
 }
 
