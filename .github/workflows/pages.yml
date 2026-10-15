@@ -1,0 +1,55 @@
+name: Publish Kervan website
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: kervan-pages
+  cancel-in-progress: false
+
+jobs:
+  package:
+    if: github.repository == 'MacallanTheRoot/kervan-dpi' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Stage website files only
+        shell: bash
+        run: |
+          set -euo pipefail
+          destination="$RUNNER_TEMP/kervan-pages"
+          install -Dm644 site/index.html "$destination/index.html"
+          install -Dm644 site/styles.css "$destination/styles.css"
+          install -Dm644 site/script.js "$destination/script.js"
+          install -Dm644 site/motion.js "$destination/motion.js"
+          install -Dm644 site/assets/kervan-camel.png "$destination/assets/kervan-camel.png"
+          install -Dm644 site/assets/packet-anatomy.svg "$destination/assets/packet-anatomy.svg"
+          install -Dm644 site/assets/packet-anatomy-mobile.svg "$destination/assets/packet-anatomy-mobile.svg"
+          install -Dm644 site/vendor/gsap/gsap.min.js "$destination/vendor/gsap/gsap.min.js"
+          install -Dm644 site/vendor/gsap/ScrollTrigger.min.js "$destination/vendor/gsap/ScrollTrigger.min.js"
+          install -Dm644 site/vendor/gsap/NOTICE.md "$destination/vendor/gsap/NOTICE.md"
+          test "$(find "$destination" -type f | wc -l)" -eq 10
+      - uses: actions/configure-pages@v6.0.0
+      - uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: ${{ runner.temp }}/kervan-pages
+
+  deploy:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v5.0.1

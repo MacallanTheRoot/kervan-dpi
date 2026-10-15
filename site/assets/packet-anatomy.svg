@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="390" viewBox="0 0 1200 390" role="img" aria-labelledby="title desc">
+  <title id="title">Packet fields and separate Kervan DPI engine controls</title>
+  <desc id="desc">A conceptual packet strip marks IP, transport, protocol, and payload fields. A DPI inspection bracket sits above the fields. Below, a separate control line connects the Kervan DPI interface to a selected engine.</desc>
+  <style>
+    text{font-family:Arial,Helvetica,sans-serif;fill:#15202a}
+    .mono{font-family:Consolas,'Liberation Mono',monospace;letter-spacing:1px}
+    .small{font-size:13px}.medium{font-size:16px}.large{font-size:22px;font-weight:600}
+    .muted{fill:#606a70}.blue{fill:#08679f}.line{stroke:#aab3b4;stroke-width:1;fill:none}.ink{stroke:#15202a;stroke-width:1.4;fill:none}.accent{stroke:#08679f;stroke-width:2;fill:none}
+  </style>
+  <path class="line" d="M0 0H1200M0 389H1200"/>
+  <text x="24" y="37" class="mono small muted">01 / IP · TCP / UDP · TLS / HTTP</text>
+  <text x="24" y="85" class="large">IP / TCP / UDP</text>
+  <path class="ink" d="M252 70H1140"/>
+  <text x="252" y="56" class="mono small muted">0</text>
+  <text x="546" y="56" class="mono small muted">32</text>
+  <text x="842" y="56" class="mono small muted">64</text>
+  <text x="1124" y="56" class="mono small muted">96</text>
+  <path class="line" d="M252 70v-8m37 8v-5m37 5v-5m37 5v-5m37 5v-8m37 8v-5m37 5v-5m37 5v-5m37 5v-8m37 8v-5m37 5v-5m37 5v-5m37 5v-8m37 8v-5m37 5v-5m37 5v-5m37 5v-8m37 8v-5m37 5v-5m37 5v-5m37 5v-8m37 8v-5m37 5v-5m37 5v-5m37 5v-8"/>
+  <rect x="252" y="104" width="888" height="112" fill="#f4f3ee" stroke="#15202a" stroke-width="1.4"/>
+  <rect x="252" y="104" width="142" height="112" fill="#e3e8e6"/>
+  <rect x="394" y="104" width="192" height="112" fill="#edf0ed"/>
+  <rect x="586" y="104" width="295" height="112" fill="#dceaf1"/>
+  <rect data-motion-stage="ip" x="252" y="104" width="142" height="112" fill="#08679f" opacity="0"/>
+  <rect data-motion-stage="transport" x="394" y="104" width="192" height="112" fill="#08679f" opacity="0"/>
+  <rect data-motion-stage="protocol" x="586" y="104" width="295" height="112" fill="#08679f" opacity="0"/>
+  <path class="ink" d="M394 104v112m192-112v112m295-112v112"/>
+  <text x="272" y="144" class="mono small muted">01</text><text x="272" y="177" class="large">IP</text>
+  <text x="414" y="144" class="mono small muted">02</text><text x="414" y="177" class="large">TCP / UDP</text>
+  <text x="606" y="144" class="mono small blue">03</text><text x="606" y="177" class="large">TLS / HTTP</text>
+  <text x="901" y="144" class="mono small muted">04</text><text x="901" y="177" class="large">PAYLOAD</text>
+  <path class="accent" d="M586 237v16h554v-16"/>
+  <text x="863" y="275" text-anchor="middle" class="mono small blue">DPI ?</text>
+  <path class="line" d="M24 303H1176"/>
+  <text x="24" y="338" class="mono small muted">02 / UI → ENGINE</text>
+  <rect x="578" y="317" width="183" height="50" fill="#0b1724"/>
+  <text x="670" y="348" text-anchor="middle" class="mono medium" fill="#fff" style="fill:#fff">KERVAN DPI / UI</text>
+  <path data-motion-stage="link" class="accent" d="M761 342h138"/>
+  <path data-motion-stage="link" class="accent" d="m892 336 8 6-8 6"/>
+  <rect x="900" y="317" width="240" height="50" fill="none" stroke="#0b1724" stroke-width="1.4"/>
+  <rect data-motion-stage="control" x="900" y="317" width="240" height="50" fill="#08679f" opacity="0"/>
+  <text x="1020" y="348" text-anchor="middle" class="mono medium">ENGINE</text>
+</svg>
