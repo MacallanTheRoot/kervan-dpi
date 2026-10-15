@@ -33,7 +33,7 @@ Priority: optional
 Installed-Size: $installed_size
 Depends: libc6, libstdc++6
 Homepage: https://github.com/MacallanTheRoot/GoodbyeDPI-Turkey-GUI
-Description: Qt controller for GoodbyeDPI and SpoofDPI
+Description: Kervan DPI desktop controller for DPI-related access restrictions
  On Linux, this GUI controls an independently installed SpoofDPI v0.12.0
  local HTTP proxy on 127.0.0.1:8080. It does not configure the system proxy.
  SpoofDPI is not bundled or installed by this package.

@@ -1,135 +1,68 @@
 # Kervan DPI
 
-![Kervan DPI mavi deve simgesi / blue camel mark](site/assets/kervan-camel.png)
+![Kervan DPI blue camel symbol](assets/kervan-camel.png)
 
-**Yol Açık, Kervan Yürür.**
+**Yol Açık, Kervan Yürür.** · [Türkçe rehber](docs/README.tr.md)
 
-Kervan DPI, Windows ve Linux için açık kaynaklı bir masaüstü uygulamasıdır. DPI kaynaklı erişim kısıtlamalarına yönelik araçları tek arayüzden yönetir. Windows'ta GoodbyeDPI, Linux'ta ise ayrı kurulan SpoofDPI ile çalışır.
+Kervan DPI is an open-source desktop controller for tools that can help with DPI-related access restrictions. On Windows, it manages the bundled [GoodbyeDPI](https://github.com/ValdikSS/GoodbyeDPI) engine and [WinDivert](https://github.com/basil00/WinDivert). On Linux, it can manage a separately installed [SpoofDPI](https://github.com/xvzc/SpoofDPI) local HTTP proxy. The project was previously called **GoodbyeDPI Turkey**; its GitHub address and some configuration paths retain that name for compatibility.
 
-[Kaynak kod](https://github.com/MacallanTheRoot/kervan-dpi) · [İndir / Releases](https://github.com/MacallanTheRoot/kervan-dpi/releases) · [Web sitesi (yayına hazırlanıyor)](https://macallantheroot.github.io/kervan-dpi/)
+> **Release status:** The Kervan DPI `1.0.1rc2` Windows candidate has **not** been published. The fix01 source was built and partially tested on Windows 11; the updated source here needs a fresh native build and complete QA. See the [release readiness record](docs/release/kervan-dpi-readiness.md).
 
-## Türkçe
+## Platform status
 
-### Windows ve Linux
-
-**Windows:** Yayımlanmış sürüm, GoodbyeDPI motorunu WinDivert ile çalıştırır. Masaüstü arayüzünden motoru başlatıp durdurabilir, DNS seçimini değiştirebilir, durumu ve etkinlik günlüğünü izleyebilirsiniz. WinDivert için yönetici izni istenebilir.
-
-**Linux:** Yayımlanmış sürüm, ayrıca yüklenmesi gereken SpoofDPI'yi yerel HTTP proxy olarak yönetir. Proxy 127.0.0.1:8080 adresini kullanır; tarayıcı veya diğer uygulamalar bu proxy'yi kullanacak şekilde ayarlanmalıdır. Uygulama sistemin proxy ayarlarını kendiliğinden değiştirmez. İsteğe bağlı şeffaf, sistem genelinde çalışma desteği geliştirilmektedir; mevcut indirmelerde yer almaz.
-
-### Özellikler
-
-- **Enable / Disable** ile desteklenen motoru arayüzden başlatma ve durdurma.
-- DNS sağlayıcısı seçimi, bağlantı durumu ve etkinlik günlüğü.
-- Desteklenen masaüstlerinde sistem tepsisi; açık, koyu ve sistem temasına uyumlu görünüm.
-- Windows ve Linux'un farklı çalışma biçimlerini tek bir Qt arayüzünde sunma.
-
-Sonuçlar ağa ve kullanılan motora bağlıdır. Kervan DPI bir VPN, anonimlik, şifreleme veya IP gizleme hizmeti değildir; her ağda erişim sağlayacağını garanti etmez.
-
-### İndirme ve kurulum
-
-[GitHub Releases](https://github.com/MacallanTheRoot/kervan-dpi/releases) sayfasındaki **v1.0.1-rc1 ön sürümü**, Windows x86_64 EXE, Linux amd64 DEB ve Linux amd64 TAR.GZ dosyalarını içerir. Bu yayımlanmış dosyalar eski **GoodbyeDPI Turkey** adlarını taşır; daha yeni Kervan markalı uygulama paketleri henüz yayımlanmamıştır.
-
-| Platform | Yayımlanmış dosya | Kullanım |
+| Platform | Current capability | Release status |
 | --- | --- | --- |
-| Windows x86_64 | GoodbyeDPI-Turkey-1.0.1rc1-windows-x86_64.exe | EXE'yi indirin ve çalıştırın. |
-| Debian / Kali Linux amd64 | goodbyedpi-turkey_1.0.1.rc1_amd64.deb | Paketi kurun, ardından uygulamayı açın. |
-| Linux amd64 taşınabilir | GoodbyeDPI-Turkey-1.0.1rc1-linux-amd64.tar.gz | Arşivi açın ve içindeki uygulamayı çalıştırın. |
+| Windows 11 x64 | Bundled GoodbyeDPI and WinDivert | Fix01 branded EXE had partial real-device validation; the changed candidate needs a fresh build and complete native QA. |
+| Other Windows versions | Windows source and build path | No native result for this candidate. |
+| Debian/Kali Linux amd64 | Local SpoofDPI HTTP proxy, installed separately | Development stage. Browsers or other clients must explicitly select the proxy. |
+| Linux transparent `nfqws2`/NFQUEUE | Experimental integration | Unreleased; no verified system-wide transparent bypass. |
+| Android / iOS | Future roadmap | No downloadable application. |
 
-DEB dosyasını indirdiğiniz dizinde kurmak için:
+## Features
 
-~~~sh
-sudo apt install ./goodbyedpi-turkey_1.0.1.rc1_amd64.deb
-goodbyedpi-turkey
-~~~
+- Enable/Disable control, DNS selection, status, activity log, system tray, light/dark theme, and optional startup shortcut.
+- Windows engine files staged persistently under the existing `GoodbyeDPI-Turkey` engine path, with process cleanup on Quit.
+- Linux SpoofDPI Normal and Compatibility proxy modes. Compatibility passes `-window-size 4`; results depend on the network.
+- Preferences open from the header. **Automatic Updates** is Off and unavailable until signed installation and native Windows QA are complete. **Check for Updates** works independently and shows official stable releases only; use [manual update instructions](docs/release/windows-update.md).
 
-Linux'ta [SpoofDPI](https://github.com/xvzc/SpoofDPI) ayrıca kurulmalı ve çalıştırılabilir dosyası uygulamanın bulabileceği bir konumda olmalıdır. Bir yöntem, Go kuruluysa şudur:
+## Windows download and use
 
-~~~sh
-go install github.com/xvzc/SpoofDPI/cmd/spoofdpi@v0.12.0
-~~~
+The branded Windows EXE and portable ZIP are **not available yet**. Once a candidate has been built and tested, obtain it and its matching SHA-256 manifest from this project's [GitHub Releases](https://github.com/MacallanTheRoot/GoodbyeDPI-Turkey-GUI/releases). Historical assets there use the former name. Compare the published digest with `Get-FileHash .\Kervan-DPI.exe -Algorithm SHA256` before running the file. There is currently no installer or code-signed Kervan DPI executable.
 
-Ardından kullanacağınız tarayıcıyı veya uygulamayı 127.0.0.1:8080 HTTP proxy'sine yönlendirin. Yayımlanmış paketlere ilişkin ek notlar için [Linux paketleme belgesine](docs/packaging-rc.md) bakın. İndirme sayfasındaki SHA256SUMS dosyasıyla dosyaların bütünlüğünü doğrulayabilirsiniz.
+For a future portable release, extract the ZIP into a folder you control and run `Kervan-DPI.exe`. Windows may ask for administrator permission through UAC because the engine uses WinDivert. Choose a DNS provider and select **Enable**. Select **Disable** to stop the engine. Closing the window hides it in the tray; choose **Show Kervan DPI** to reopen it or **Quit Kervan DPI** to stop an active engine and exit. Native behavior of the final branded EXE still requires verification.
 
-### Teknik yapı
+Settings stay at `%APPDATA%\GoodbyeDPI-Turkey\config.json`. A new startup shortcut is named `Kervan DPI.lnk`; an existing `GoodbyeDPI-Turkey GUI.lnk` is retained. Check the shortcut target when upgrading, and consult the [migration and rollback guide](docs/release/windows-migration.md). No brand-related settings path migration or deletion is performed; a fresh profile can import a bundled legacy `config.json` without replacing an existing file.
 
-Arayüz Python, PySide6 ve Qt Widgets ile yazılmıştır. Windows sürümü GoodbyeDPI ve WinDivert kullanır; Linux sürümü ise kullanıcı oturumunda çalışan harici SpoofDPI proxy'sini yönetir. Bu motorların izinleri ve ağdaki etkileri farklıdır. Geliştirilmekte olan şeffaf Linux desteği, yayımlanmış proxy sürümünden ayrı bir çalışma yoludur.
+## Security and limitations
 
-Eski paket ve ayar kimlikleri uyumluluk için korunur: Linux komutu ve paket adı goodbyedpi-turkey, Linux ayar yolu $XDG_CONFIG_HOME/goodbyedpi-turkey/config.json (XDG_CONFIG_HOME tanımlı değilse ~/.config/goodbyedpi-turkey/config.json), Windows ayar yolu %APPDATA%\GoodbyeDPI-Turkey\config.json.
+Kervan DPI is not a VPN, anonymity service, or encrypted tunnel. It cannot promise access on every network. Windows uses administrator permission and a packet driver; review the UAC prompt. The branded EXE's icon, version properties, driver path, network behavior, and cleanup still need native verification. The [approved camel artwork record](docs/branding/kervan-camel-source.md) documents the icon export; redistribution rights are still a release gate.
 
-### Neden Kervan?
+Linux **Enable** starts a local HTTP proxy at `127.0.0.1:8080` only when SpoofDPI is installed. It does not change the system proxy, route, or firewall, and transparent NFQUEUE mode is not available. See the [Linux development and local proxy guide](docs/linux-development.md) and the [Nightshift validation report](docs/engineering/phase-7h-nightshift-final-report.md).
 
-Bir kervan, yolu kapanınca yolculuğu bırakmaz; ilerlemek için başka bir yol arar. Kervan adı, DPI kaynaklı erişim kısıtlamaları karşısında çözüm arama kararlılığını anlatır. **Yol Açık, Kervan Yürür.**
+## Troubleshooting
 
-### Açık kaynak ve katkı
+- **UAC denied or Enable fails:** Review the activity log and permissions. Record the result using the [Windows QA checklist](docs/release/windows-qa-checklist.md). Do not delete WinDivert services or engine files without checking ownership.
+- **A connection remains blocked:** Select **Disable**, then **Quit Kervan DPI** and retry ordinary HTTPS. Check the chosen DNS provider and any other proxy or filter on the machine. Report a reproducible failure through [GitHub Issues](https://github.com/MacallanTheRoot/GoodbyeDPI-Turkey-GUI/issues).
+- **The window disappeared:** Open it from the system tray. Quit from the tray to exit completely.
+- **Settings or startup changed:** Check `%APPDATA%\GoodbyeDPI-Turkey\config.json` and the target of the retained startup shortcut. Back up settings before upgrade tests.
+- **Linux proxy does not work:** Check the separate SpoofDPI installation, the `127.0.0.1:8080` listener, and the client's proxy setting.
 
-Kaynak kodu [GitHub deposunda](https://github.com/MacallanTheRoot/kervan-dpi) inceleyebilir, hata bildirimlerini ve önerileri [Issues](https://github.com/MacallanTheRoot/kervan-dpi/issues) üzerinden paylaşabilirsiniz. Geliştirici: [MacallanTheRoot](https://github.com/MacallanTheRoot).
+## Build from source
 
-Uygulama kodu [MIT lisansı](LICENSE) altındadır. GoodbyeDPI, WinDivert ve SpoofDPI bağımsız projelerdir; geliştirilmekte olan Linux yolunda kullanılan [Zapret2](https://github.com/bol-van/zapret2) de ayrı bir upstream projedir. Her birinin kendi lisansı geçerlidir. [Üçüncü taraf bildirimleri](THIRD_PARTY_NOTICES.md), [Qt/PySide6 LGPL kaynak ve yeniden bağlama bilgileri](docs/qt-lgpl-compliance.md) ve [web sitesi kaynak notları](site/README.md) ayrıca sağlanır.
+For Windows, use **Python 3.13 x64** with the `py` launcher on a real Windows host. In a fresh checkout with no existing `.venv`, build from the checked-in approved camel source:
 
-Web sitesinde kullanılan GSAP, uygulamanın MIT lisansına dahil değildir; [GSAP Standard License bildirimi](site/vendor/gsap/NOTICE.md) ayrıdır. Mavi deve görseli proje sahibinin isteğiyle bu proje için ChatGPT üzerinden üretilmiş ve onaylanmıştır; burada MIT lisanslı olduğu iddia edilmez.
+```bat
+py -3.13 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements-windows-rc.txt
+build.bat
+```
 
-## English
+The expected output is `dist\Kervan-DPI.exe`; `build.bat` rejects unsupported Python versions and existing EXE output. The [Windows build and source-package instructions](docs/release/windows-build.md) describe the isolated RC handoff, checks, and native QA. For Linux development, see the [local proxy guide](docs/linux-development.md); a source test run is `QT_QPA_PLATFORM=offscreen .venv/bin/python -m unittest discover -s tests -q`.
 
-### Overview
+## Contributing, license, and credits
 
-Kervan DPI is an open-source desktop application for Windows and Linux. It brings controls for DPI circumvention tools into one interface: GoodbyeDPI on Windows and a separately installed SpoofDPI proxy on Linux.
+Open an [issue](https://github.com/MacallanTheRoot/GoodbyeDPI-Turkey-GUI/issues) with OS/build, app version, reproduction steps, expected/actual behavior, and relevant redacted log entries. Changes to engine lifecycle or networking should include tests and native validation on the affected platform.
 
-[Source code](https://github.com/MacallanTheRoot/kervan-dpi) · [Downloads](https://github.com/MacallanTheRoot/kervan-dpi/releases) · [Website (publication in preparation)](https://macallantheroot.github.io/kervan-dpi/)
+The application code and **original project shield** are covered by the repository's [MIT license](LICENSE). The new camel artwork has a recorded source but its redistribution rights have not yet been established. Bundled components keep their own licenses: see [third-party notices](THIRD_PARTY_NOTICES.md), `bin/licenses/`, `packaging/licenses/`, and the [Qt/PySide6 source and relinking record](docs/qt-lgpl-compliance.md). That Qt record describes the earlier RC1; corresponding sources for this candidate require separate review before publication.
 
-### Windows and Linux
-
-**Windows:** The published build runs GoodbyeDPI with WinDivert. The desktop interface lets you start and stop the engine, choose DNS settings, and view status and activity. WinDivert may require administrator permission.
-
-**Linux:** The published build manages SpoofDPI as a local HTTP proxy. Install SpoofDPI separately, then configure each browser or application that should use the proxy at 127.0.0.1:8080. Kervan DPI does not change system proxy settings automatically. Optional transparent, system-wide support is in development and is not part of the current downloads.
-
-### Features
-
-- Start and stop the supported engine with **Enable / Disable**.
-- Choose a DNS provider and inspect status and the activity log.
-- Use the system tray on supported desktops and select light, dark, or system appearance.
-- Manage the platform's engine through a PySide6 / Qt Widgets desktop interface.
-
-Results depend on the network and engine. Kervan DPI is not a VPN or an anonymity, encryption, or IP masking service, and it cannot guarantee access on every network.
-
-### Downloads and installation
-
-The [v1.0.1-rc1 prerelease](https://github.com/MacallanTheRoot/kervan-dpi/releases) provides a Windows x86_64 EXE, Linux amd64 DEB, and Linux amd64 TAR.GZ. Their historical **GoodbyeDPI Turkey** filenames remain unchanged. Newer Kervan-branded application binaries have not been published.
-
-| Platform | Published file | Use |
-| --- | --- | --- |
-| Windows x86_64 | GoodbyeDPI-Turkey-1.0.1rc1-windows-x86_64.exe | Download and run the EXE. |
-| Debian / Kali Linux amd64 | goodbyedpi-turkey_1.0.1.rc1_amd64.deb | Install the package, then launch the app. |
-| Portable Linux amd64 | GoodbyeDPI-Turkey-1.0.1rc1-linux-amd64.tar.gz | Extract the archive and run the included application. |
-
-To install the DEB from its download directory:
-
-~~~sh
-sudo apt install ./goodbyedpi-turkey_1.0.1.rc1_amd64.deb
-goodbyedpi-turkey
-~~~
-
-Install [SpoofDPI](https://github.com/xvzc/SpoofDPI) separately and make its executable available to the application. With Go installed, one supported method is:
-
-~~~sh
-go install github.com/xvzc/SpoofDPI/cmd/spoofdpi@v0.12.0
-~~~
-
-Configure the browser or application to use the HTTP proxy at 127.0.0.1:8080. See the [Linux packaging notes](docs/packaging-rc.md) for more on the published package. The release also includes SHA256SUMS for checking downloaded files.
-
-### Architecture
-
-The interface is built with Python, PySide6, and Qt Widgets. The Windows build uses GoodbyeDPI and WinDivert; the Linux build controls an external SpoofDPI proxy running in the user's session. These engines have different permissions and network behavior. Transparent Linux support under development is separate from the published proxy mode.
-
-Historical installation identifiers remain for compatibility: the Linux command and package are named goodbyedpi-turkey, Linux settings use $XDG_CONFIG_HOME/goodbyedpi-turkey/config.json (or ~/.config/goodbyedpi-turkey/config.json when XDG_CONFIG_HOME is unset), and Windows settings use %APPDATA%\GoodbyeDPI-Turkey\config.json.
-
-### Why Kervan?
-
-When a caravan finds its road closed, it looks for another way to continue its journey. The name reflects persistence in seeking solutions to DPI-related access restrictions. **Yol Açık, Kervan Yürür.**
-
-### Open source and contributions
-
-Browse the [source](https://github.com/MacallanTheRoot/kervan-dpi) or share bugs and suggestions through [Issues](https://github.com/MacallanTheRoot/kervan-dpi/issues). Developed by [MacallanTheRoot](https://github.com/MacallanTheRoot).
-
-The application code is [MIT licensed](LICENSE). GoodbyeDPI, WinDivert, and SpoofDPI are independent projects; [Zapret2](https://github.com/bol-van/zapret2), used by the Linux work in development, is another upstream project. Each has its own license. See the [third-party notices](THIRD_PARTY_NOTICES.md), [Qt/PySide6 LGPL source and relinking information](docs/qt-lgpl-compliance.md), and [website source notes](site/README.md).
-
-Website GSAP has a separate [Standard License notice](site/vendor/gsap/NOTICE.md) and is not covered by the application's MIT license. The approved blue camel image was generated through ChatGPT for this project at the owner's request; this README does not claim it is MIT licensed.
+Kervan DPI is developed by [MacallanTheRoot](https://github.com/MacallanTheRoot). Application metadata reads `Copyright (c) 2026 MacallanTheRoot`; it does not establish a code-signing identity. Windows engine integration also draws on [GoodbyeDPI Turkey](https://github.com/cagritaskn/goodbyedpi-turkey), based on [GoodbyeDPI](https://github.com/ValdikSS/GoodbyeDPI) and [WinDivert](https://github.com/basil00/WinDivert). Linux proxy support uses separately installed [SpoofDPI](https://github.com/xvzc/SpoofDPI); experimental transparent work explores [Zapret2](https://github.com/bol-van/zapret2). These are independent upstream projects.

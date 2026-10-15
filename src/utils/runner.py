@@ -9,6 +9,10 @@ import shutil
 import logging
 import socket
 import time
+import hashlib
+import tempfile
+import uuid
+import stat
 from pathlib import Path
 from ctypes import wintypes
 from .detector import get_os, get_arch
@@ -16,6 +20,7 @@ from .paths import resource_path
 
 logger = logging.getLogger(__name__)
 STOP_TIMEOUT = 3
+WINDOWS_ENGINE_FILES = ("goodbyedpi.exe", "WinDivert.dll", "WinDivert64.sys")
 
 # Windows Job Object Constants
 if os.name == 'nt':
@@ -49,6 +54,93 @@ if os.name == 'nt':
                     ('PeakProcessMemoryUsed', ctypes.c_size_t),
                     ('PeakJobMemoryUsed', ctypes.c_size_t)]
 
+    class JOBOBJECT_BASIC_ACCOUNTING_INFORMATION(ctypes.Structure):
+        _fields_ = [('TotalUserTime', ctypes.c_longlong),
+                    ('TotalKernelTime', ctypes.c_longlong),
+                    ('ThisPeriodTotalUserTime', ctypes.c_longlong),
+                    ('ThisPeriodTotalKernelTime', ctypes.c_longlong),
+                    ('TotalPageFaultCount', wintypes.DWORD),
+                    ('TotalProcesses', wintypes.DWORD),
+                    ('ActiveProcesses', wintypes.DWORD),
+                    ('TotalTerminatedProcesses', wintypes.DWORD)]
+
+    class GUID(ctypes.Structure):
+        _fields_ = [('Data1', wintypes.DWORD), ('Data2', wintypes.WORD),
+                    ('Data3', wintypes.WORD), ('Data4', ctypes.c_ubyte * 8)]
+
+
+def _program_files():
+    """Use the system known folder, not an environment variable supplied by a caller."""
+    identifier = GUID.from_buffer_copy(uuid.UUID('905e63b6-c1bf-494e-b29c-65b732d3d21a').bytes_le)
+    location = ctypes.c_wchar_p()
+    shell32 = ctypes.windll.shell32
+    shell32.SHGetKnownFolderPath.argtypes = [ctypes.POINTER(GUID), wintypes.DWORD,
+                                             wintypes.HANDLE, ctypes.POINTER(ctypes.c_wchar_p)]
+    result = shell32.SHGetKnownFolderPath(ctypes.byref(identifier), 0, None,
+                                          ctypes.byref(location))
+    if result:
+        raise OSError(f"Could not locate Program Files (HRESULT {result:#x})")
+    try:
+        return Path(location.value)
+    finally:
+        ctypes.windll.ole32.CoTaskMemFree.argtypes = [ctypes.c_void_p]
+        ctypes.windll.ole32.CoTaskMemFree(ctypes.cast(location, ctypes.c_void_p))
+
+
+def _reject_reparse_directory(path):
+    """Do not follow an existing junction/symlink while running elevated."""
+    try:
+        info = path.lstat()
+    except FileNotFoundError:
+        return
+    if (path.is_symlink() or
+            getattr(info, 'st_file_attributes', 0) &
+            getattr(stat, 'FILE_ATTRIBUTE_REPARSE_POINT', 0x400)):
+        raise OSError(f"Staged GoodbyeDPI path is a reparse point: {path}")
+
+
+def _stage_windows_engine(source, arch):
+    """Keep the driver image outside PyInstaller's short-lived onefile directory."""
+    names = WINDOWS_ENGINE_FILES if arch == 'x86_64' else (
+        'goodbyedpi.exe', 'WinDivert.dll', 'WinDivert32.sys', 'WinDivert64.sys')
+    digest = hashlib.sha256()
+    for name in names:
+        path = source / name
+        if not path.is_file():
+            raise FileNotFoundError(f"GoodbyeDPI resource missing: {path}")
+        digest.update(name.encode('ascii'))
+        with path.open('rb') as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b''):
+                digest.update(block)
+    root = _program_files() / 'GoodbyeDPI-Turkey' / 'engine'
+    destination = root / digest.hexdigest()
+    root.parent.mkdir(parents=True, exist_ok=True)
+    _reject_reparse_directory(root.parent)
+    root.mkdir(exist_ok=True)
+    _reject_reparse_directory(root)
+    _reject_reparse_directory(destination)
+    if destination.exists() and not destination.is_dir():
+        raise OSError(f"Staged GoodbyeDPI path is not a directory: {destination}")
+    if not destination.is_dir():
+        staging = Path(tempfile.mkdtemp(prefix='.staging-', dir=root))
+        try:
+            for name in names:
+                shutil.copyfile(source / name, staging / name)
+            try:
+                staging.rename(destination)
+            except FileExistsError:
+                _reject_reparse_directory(destination)
+                if not destination.is_dir():
+                    raise OSError(f"Staged GoodbyeDPI path is not a directory: {destination}")
+                # Another instance installed the same content; verify it below.
+        finally:
+            if staging.exists():
+                shutil.rmtree(staging)
+    for name in names:
+        if (source / name).read_bytes() != (destination / name).read_bytes():
+            raise OSError(f"Staged GoodbyeDPI resource differs: {name}")
+    return destination / 'goodbyedpi.exe'
+
 class DNSRunner:
     def __init__(self, log_callback=None):
         self.process = None
@@ -62,16 +154,21 @@ class DNSRunner:
         # Last resort if the GUI never reaches its explicit shutdown path.
         atexit.register(self.stop)
 
-    def start(self, dns_addr="77.88.8.8", dns_port="1253"):
+    def start(self, dns_addr="77.88.8.8", dns_port="1253", spoofdpi_mode="Normal"):
         with self._lock:
             if self.process is not None:
                 if self.process.poll() is None:
                     return
+            if any(value is not None for value in
+                   (self.process, self.output_thread, self.job_handle)):
                 self.stop()
+            if any(value is not None for value in
+                   (self.process, self.output_thread, self.job_handle)):
+                raise RuntimeError("Previous engine resources are still active")
             if self.os_type == 'windows':
                 self._start_windows(dns_addr, dns_port)
             elif self.os_type == 'linux':
-                self._start_linux(dns_addr, dns_port)
+                self._start_linux(dns_addr, dns_port, spoofdpi_mode)
             else:
                 raise NotImplementedError(f"OS {self.os_type} not supported")
             if self.log_callback and self.process.stdout is not None:
@@ -134,21 +231,58 @@ class DNSRunner:
                     # Thread.start() can fail before the reader actually starts.
                     reader_done = True
 
-            try:
-                self._close_job_handle()
-            except OSError:
-                logger.warning("Could not close engine Job Object", exc_info=True)
+            # Windows job accounting can retain an exited process until its
+            # Popen process handle is closed. wait() does not close that handle.
+            reaped_before_job = reaped
+            process_handle_closed = process is None or self.os_type != 'windows'
+            if reaped and process is not None and self.os_type == 'windows':
+                process_handle_closed = self._close_process_handle(process)
+
+            job_empty = True
+            if self.job_handle and self.os_type == 'windows':
+                try:
+                    job_empty = self._wait_for_job_empty()
+                    if not job_empty:
+                        kernel32 = ctypes.windll.kernel32
+                        kernel32.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+                        if not kernel32.TerminateJobObject(self.job_handle, 1):
+                            raise ctypes.WinError()
+                        job_empty = self._wait_for_job_empty()
+                except OSError:
+                    job_empty = False
+                    logger.warning("Could not finish engine Job Object", exc_info=True)
+            if job_empty:
+                try:
+                    self._close_job_handle()
+                except OSError:
+                    logger.warning("Could not close engine Job Object", exc_info=True)
+            else:
+                logger.warning("Engine Job Object still has active processes")
 
             # Closing a Windows Job Object can finish a child that resisted kill.
             if process is not None and not reaped:
                 reaped = self._wait_for_process(process)
+            if reaped and not reaped_before_job and not process_handle_closed:
+                process_handle_closed = self._close_process_handle(process)
             if not reaped:
                 logger.warning("Engine was not reaped during shutdown")
             if not reader_done:
                 logger.warning("Engine output reader did not finish during shutdown")
-            if reaped and reader_done and self.job_handle is None:
+            if reaped and reader_done and process_handle_closed and self.job_handle is None:
                 self.process = None
                 self.output_thread = None
+
+    @staticmethod
+    def _close_process_handle(process):
+        handle = getattr(process, '_handle', None)
+        if handle is None:
+            return True
+        try:
+            handle.Close()
+            return True
+        except (OSError, ValueError):
+            logger.warning("Could not close engine process handle", exc_info=True)
+            return False
 
     @staticmethod
     def _wait_for_process(process):
@@ -167,6 +301,27 @@ class DNSRunner:
             if not ctypes.windll.kernel32.CloseHandle(self.job_handle):
                 raise ctypes.WinError()
             self.job_handle = None
+
+    def _job_active_processes(self):
+        kernel32 = ctypes.windll.kernel32
+        kernel32.QueryInformationJobObject.argtypes = [
+            wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD,
+            ctypes.POINTER(wintypes.DWORD)]
+        info = JOBOBJECT_BASIC_ACCOUNTING_INFORMATION()
+        if not kernel32.QueryInformationJobObject(
+            self.job_handle, 1, ctypes.byref(info), ctypes.sizeof(info), None
+        ):
+            raise ctypes.WinError()
+        return info.ActiveProcesses
+
+    def _wait_for_job_empty(self):
+        deadline = time.monotonic() + STOP_TIMEOUT
+        while self._job_active_processes():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return False
+            threading.Event().wait(min(remaining, 0.05))
+        return True
 
     def _read_output(self, process):
         """Reads stdout/stderr and sends to callback"""
@@ -204,16 +359,16 @@ class DNSRunner:
         exe_path = resource_path("bin", self.arch, "goodbyedpi.exe")
         if not exe_path.is_file():
             raise FileNotFoundError(f"GoodbyeDPI executable missing: {exe_path}")
+        if getattr(sys, 'frozen', False):
+            try:
+                exe_path = _stage_windows_engine(exe_path.parent, self.arch)
+            except OSError as exc:
+                raise OSError(
+                    "Could not stage the GoodbyeDPI engine in Program Files. "
+                    "Check administrator access, free space and Windows Security history. "
+                    f"Details: {exc}") from exc
         
-        args = [
-            str(exe_path),
-            "-5",
-            "--set-ttl", "5",
-            "--dns-addr", dns_addr,
-            "--dns-port", dns_port,
-            "--dnsv6-addr", "2a02:6b8::feed:0ff",
-            "--dnsv6-port", "1253"
-        ]
+        args = build_windows_command(exe_path, dns_addr, dns_port)
 
         # Use startupinfo to hide console window for the subprocess
         if self.os_type == 'windows':
@@ -241,18 +396,9 @@ class DNSRunner:
             self.stop()
             raise
 
-    def _start_linux(self, dns_addr, dns_port):
+    def _start_linux(self, dns_addr, dns_port, spoofdpi_mode="Normal"):
         executable = find_spoof_dpi()
-        # SpoofDPI v0.12.0 uses plain DNS at this address and port unless
-        # -enable-doh is supplied; arbitrary provider IPs need not serve DoH.
-        args = [
-            executable,
-            "-addr", "127.0.0.1",
-            "-dns-addr", dns_addr,
-            "-dns-port", str(dns_port),
-            "-port", "8080",
-            "-system-proxy=false",
-        ]
+        args = build_linux_command(executable, dns_addr, dns_port, spoofdpi_mode)
         # A listening socket is a stronger launch check than Popen succeeding.
         # Check for a pre-existing listener so it cannot be mistaken for ours.
         with socket.socket() as probe:
@@ -277,6 +423,24 @@ class DNSRunner:
             threading.Event().wait(0.05)
         self.stop()
         raise RuntimeError("SpoofDPI did not open 127.0.0.1:8080 within 3 seconds.")
+
+
+def build_windows_command(executable, dns_addr, dns_port):
+    """Keep the established GoodbyeDPI command independent of display branding."""
+    return [str(executable), "-5", "--set-ttl", "5", "--dns-addr", dns_addr,
+            "--dns-port", dns_port, "--dnsv6-addr", "2a02:6b8::feed:0ff",
+            "--dnsv6-port", "1253"]
+
+
+def build_linux_command(executable, dns_addr, dns_port, mode="Normal"):
+    """Build SpoofDPI v0.12.0 arguments without changing the normal command."""
+    if mode not in ("Normal", "Compatibility"):
+        raise ValueError(f"Unsupported SpoofDPI mode: {mode}")
+    args = [executable, "-addr", "127.0.0.1", "-dns-addr", dns_addr,
+            "-dns-port", str(dns_port), "-port", "8080", "-system-proxy=false"]
+    if mode == "Compatibility":
+        args += ["-window-size", "4"]
+    return args
 
 
 def find_spoof_dpi():

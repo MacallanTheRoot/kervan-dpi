@@ -1,80 +1,89 @@
-name: Build verification
+name: Kervan DPI Windows RC2 Fix04
 
 on:
   push:
-  pull_request:
+    branches:
+      - release/windows-rc2-build
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.13'
-      - name: Install Qt runtime libraries
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libegl1 libgl1 libopengl0 libxkbcommon-x11-0
-      - name: Prepare build environment
-        run: |
-          python -m venv .venv
-          .venv/bin/python -m pip install -r requirements.txt
-      - name: Unit and Qt tests
-        env:
-          QT_QPA_PLATFORM: offscreen
-        run: .venv/bin/python -m unittest discover -s tests -v
-      - name: Static checks
-        run: |
-          .venv/bin/python -m compileall -q src tests
-          .venv/bin/python -m pip check
-          bash -n build_linux.sh packaging/linux/install.sh packaging/linux/uninstall.sh packaging/debian/build_deb.sh
-      - name: Build Linux and Debian packages
-        run: |
-          ./build_linux.sh
-          packaging/debian/build_deb.sh
-          dpkg-deb --info dist/*.deb
-          dpkg-deb --contents dist/*.deb
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-rc
-          path: |
-            dist/goodbyedpi-turkey/
-            dist/*.deb
-          if-no-files-found: error
-
-  windows:
+  windows-rc2:
     runs-on: windows-latest
+    timeout-minutes: 45
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v6
+      - name: Checkout release source
+        uses: actions/checkout@v4
+
+      - name: Setup Windows Python 3.13 x64
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
           architecture: x64
-      - name: Prepare build environment
+
+      - name: Install pinned dependencies
         shell: pwsh
         run: |
           python -m venv .venv
-          .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-      - name: Unit and Qt tests
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .\\.venv\\Scripts\\python.exe -m pip install -r requirements-windows-rc.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .\\.venv\\Scripts\\python.exe -m pip check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Run Windows unit and Qt tests
         shell: pwsh
         env:
           QT_QPA_PLATFORM: offscreen
-        run: .\.venv\Scripts\python.exe -m unittest discover -s tests -v
-      - name: Static checks
+        run: |
+          .\\.venv\\Scripts\\python.exe -m unittest discover -s tests -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .\\.venv\\Scripts\\python.exe -m compileall -q src tests
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build Windows EXE
+        shell: cmd
+        run: call build.bat
+
+      - name: Inspect Windows EXE
         shell: pwsh
         run: |
-          .\.venv\Scripts\python.exe -m compileall -q src tests
-          .\.venv\Scripts\python.exe -m pip check
-      - name: Build Windows onefile
-        shell: cmd
-        run: build.bat
-      - uses: actions/upload-artifact@v4
+          .\\.venv\\Scripts\\python.exe tools/windows/inspect_rc.py dist/Kervan-DPI.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build portable ZIP and checksums
+        shell: pwsh
+        run: |
+          & .\\tools\\windows\\package_rc.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Verify release artifacts
+        shell: pwsh
+        run: |
+          $exe = @(Get-ChildItem dist -Filter 'Kervan-DPI.exe' -File)
+          $zip = @(Get-ChildItem dist -Filter 'Kervan-DPI-*-windows-portable.zip' -File)
+          $sha = @(Get-ChildItem dist -Filter 'Kervan-DPI-*-WINDOWS-SHA256SUMS.txt' -File)
+
+          if ($exe.Count -ne 1 -or $zip.Count -ne 1 -or $sha.Count -ne 1) {
+            throw "Required Windows RC2 artifacts are missing or ambiguous."
+          }
+
+          foreach ($item in ($exe + $zip + $sha)) {
+            if ($item.Length -eq 0) { throw "Empty artifact: $($item.Name)" }
+            Get-FileHash -LiteralPath $item.FullName -Algorithm SHA256 |
+              Format-List
+          }
+
+      - name: Upload Windows RC2 artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: windows-rc
-          path: dist/GoodbyeDPI-Turkey.exe
+          name: kervan-windows-rc2-fix04
+          path: |
+            dist/Kervan-DPI.exe
+            dist/Kervan-DPI-*-windows-portable.zip
+            dist/Kervan-DPI-*-WINDOWS-SHA256SUMS.txt
           if-no-files-found: error
+          retention-days: 14

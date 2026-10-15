@@ -14,10 +14,20 @@ from utils import startup
 from utils.config import ConfigManager
 from utils.detector import get_arch
 from utils.paths import config_dir, resource_path, resource_root
-from utils.runner import DNSRunner, find_spoof_dpi
+from utils.runner import DNSRunner, build_linux_command, find_spoof_dpi
 
 
 class ConfigTests(unittest.TestCase):
+    def test_old_config_defaults_to_normal_and_mode_persists(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = Path(root)
+            (folder / "config.json").write_text('{"dns_provider": "Google"}')
+            manager = ConfigManager(folder)
+            self.assertEqual(manager.get("spoofdpi_mode"), "Normal")
+            manager.save_config("spoofdpi_mode", "Compatibility")
+            self.assertEqual(ConfigManager(folder).get("spoofdpi_mode"), "Compatibility")
+            self.assertEqual(ConfigManager(folder).get("dns_provider"), "Google")
+
     def test_malformed_config_uses_defaults(self):
         with tempfile.TemporaryDirectory() as root:
             folder = Path(root)
@@ -30,7 +40,7 @@ class ConfigTests(unittest.TestCase):
             (folder / "config.json").write_text('{"future": {"enabled": true}, "dns_provider": "Google"}')
             manager = ConfigManager(folder)
             manager.save_config("dns_provider", "Cloudflare")
-            data = json.loads((folder / "config.json").read_text())
+            data = json.loads((folder / "config.json").read_text(encoding="utf-8"))
             self.assertEqual(data["future"], {"enabled": True})
             self.assertEqual(data["dns_provider"], "Cloudflare")
             self.assertFalse(list(folder.glob("*.tmp")))
@@ -54,6 +64,19 @@ class ConfigTests(unittest.TestCase):
 
 
 class AutostartTests(unittest.TestCase):
+    def test_windows_legacy_shortcut_remains_single_entry(self):
+        with tempfile.TemporaryDirectory() as root, patch("utils.startup.subprocess.run") as run:
+            env = {"APPDATA": root}
+            folder = Path(root) / "Microsoft/Windows/Start Menu/Programs/Startup"
+            folder.mkdir(parents=True)
+            legacy = folder / "GoodbyeDPI-Turkey GUI.lnk"
+            legacy.write_text("old target")
+            self.assertEqual(startup.startup_path("win32", env, root), legacy)
+            self.assertTrue(startup.is_enabled("win32", env, root))
+            startup.set_enabled(True, "win32", env, root)
+            self.assertIn(str(legacy), run.call_args.args[0][3])
+            self.assertFalse((folder / "Kervan DPI.lnk").exists())
+
     def test_windows_shortcut_uses_powershell_and_minimized(self):
         with tempfile.TemporaryDirectory() as root, \
              patch("utils.startup.subprocess.run") as run, \
@@ -73,7 +96,7 @@ class AutostartTests(unittest.TestCase):
             startup.set_enabled(True, "linux", env, root)
             path = startup.startup_path("linux", env, root)
             self.assertTrue(startup.is_enabled("linux", env, root))
-            content = path.read_text()
+            content = path.read_text(encoding="utf-8")
             self.assertIn("Exec=", content)
             self.assertIn("main.py", content)
             self.assertIn("--minimized", content)
@@ -86,14 +109,14 @@ class AutostartTests(unittest.TestCase):
              patch.object(sys, "executable", "/opt/goodbyedpi-turkey/goodbyedpi-turkey"):
             startup.set_enabled(True, "linux", {"XDG_CONFIG_HOME": root}, root)
             self.assertIn('/opt/goodbyedpi-turkey/goodbyedpi-turkey" --minimized',
-                          (Path(root) / "autostart/goodbyedpi-turkey.desktop").read_text())
+                          (Path(root) / "autostart/goodbyedpi-turkey.desktop").read_text(encoding="utf-8"))
 
     def test_debian_frozen_autostart_uses_running_executable(self):
         with tempfile.TemporaryDirectory() as root, \
              patch.object(sys, "frozen", True, create=True), \
              patch.object(sys, "executable", "/usr/bin/goodbyedpi-turkey"):
             startup.set_enabled(True, "linux", {"XDG_CONFIG_HOME": root}, root)
-            entry = (Path(root) / "autostart/goodbyedpi-turkey.desktop").read_text()
+            entry = (Path(root) / "autostart/goodbyedpi-turkey.desktop").read_text(encoding="utf-8")
             self.assertIn('Exec="/usr/bin/goodbyedpi-turkey" --minimized', entry)
 
     def test_unsupported_autostart_os_is_explicit(self):
@@ -118,6 +141,15 @@ class ResourceAndArchitectureTests(unittest.TestCase):
 
 
 class SpoofDPITests(unittest.TestCase):
+    def test_linux_modes_have_exact_arguments(self):
+        normal = ["/usr/bin/spoofdpi", "-addr", "127.0.0.1", "-dns-addr", "77.88.8.8",
+                  "-dns-port", "1253", "-port", "8080", "-system-proxy=false"]
+        self.assertEqual(build_linux_command("/usr/bin/spoofdpi", "77.88.8.8", "1253"), normal)
+        self.assertEqual(build_linux_command("/usr/bin/spoofdpi", "77.88.8.8", "1253",
+                                             "Compatibility"), normal + ["-window-size", "4"])
+        with self.assertRaises(ValueError):
+            build_linux_command("/usr/bin/spoofdpi", "77.88.8.8", "1253", "invalid")
+
     def test_occupied_proxy_port_does_not_launch_or_claim_process(self):
         occupied = MagicMock()
         occupied.__enter__.return_value = occupied

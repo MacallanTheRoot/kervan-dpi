@@ -59,6 +59,10 @@ class StatusCard:
         self.action.setObjectName("secondary" if phase == Phase.ACTIVE else "primary")
         self.action.style().unpolish(self.action)
         self.action.style().polish(self.action)
-        self.action.setEnabled(phase in (Phase.INACTIVE, Phase.ACTIVE, Phase.ERROR))
+        unavailable = (state.platform == "linux" and
+                       state.linux_engine == "Zapret2 — Transparent (Experimental)")
+        self.action.setEnabled(phase in (Phase.INACTIVE, Phase.ACTIVE, Phase.ERROR)
+                               and not unavailable)
         target = "protection" if state.platform == "windows" else "local proxy"
-        self.action.setAccessibleName(f"{'Disable' if phase == Phase.ACTIVE else 'Enable'} {target}")
+        self.action.setAccessibleName("Transparent mode unavailable" if unavailable else
+                                      f"{'Disable' if phase == Phase.ACTIVE else 'Enable'} {target}")

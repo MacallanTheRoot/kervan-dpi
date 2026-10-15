@@ -28,9 +28,17 @@ class AppState:
     dns_provider: str = "Turkey DNSRedir"
     startup_enabled: bool = False
     theme: str = "System"
+    spoofdpi_mode: str = "Normal"
+    linux_engine: str = "SpoofDPI — Proxy"
+    zapret_strategy: str = "TLS split (research)"
+    zapret_status: str = ""
     activity_expanded: bool = False
     messages: list[str] = field(default_factory=list)
     error: str = ""
+    automatic_updates: bool = False
+    update_status: str = "idle"
+    update_message: str = ""
+    update_release: object = None
 
     @property
     def active(self):
@@ -38,11 +46,15 @@ class AppState:
 
     @property
     def heading(self):
+        if self.platform == "linux" and self.linux_engine == "Zapret2 — Transparent (Experimental)":
+            return "Transparent Mode Unavailable"
         prefix = "Protection" if self.platform == "windows" else "Local Proxy"
         return f"{prefix} {'Active' if self.active else 'Inactive'}"
 
     @property
     def detail(self):
+        if self.platform == "linux" and self.linux_engine == "Zapret2 — Transparent (Experimental)":
+            return self.zapret_status or "Native approval and a privileged helper are required."
         if self.phase == Phase.STARTING:
             return "Starting GoodbyeDPI…" if self.platform == "windows" else "Starting local proxy…"
         if self.phase == Phase.STOPPING:
@@ -57,4 +69,8 @@ class AppState:
 
     @property
     def backend_label(self):
-        return "GoodbyeDPI · DNS redirection" if self.platform == "windows" else "SpoofDPI · local HTTP proxy"
+        if self.platform == "windows":
+            return "GoodbyeDPI · DNS redirection"
+        return ("Zapret2 · transparent (experimental)" if
+                self.linux_engine == "Zapret2 — Transparent (Experimental)" else
+                "SpoofDPI · local HTTP proxy")

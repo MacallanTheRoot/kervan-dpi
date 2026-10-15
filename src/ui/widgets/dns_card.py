@@ -26,5 +26,7 @@ class DNSCard:
         self.selector.blockSignals(True)
         self.selector.setCurrentText(state.dns_provider)
         self.selector.blockSignals(False)
-        self.selector.setEnabled(state.phase in (Phase.INACTIVE, Phase.ERROR))
+        self.selector.setEnabled(state.phase in (Phase.INACTIVE, Phase.ERROR) and
+                                 not (state.platform == "linux" and
+                                      state.linux_engine == "Zapret2 — Transparent (Experimental)"))
         self.backend.setText(state.backend_label)

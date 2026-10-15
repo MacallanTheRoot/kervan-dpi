@@ -1,5 +1,7 @@
 # Phase 5 packaging validation
 
+> Historical RC1 record. Its version and Windows icon/build descriptions do not describe the current Kervan DPI Windows candidate. See the [current Windows build guide](release/windows-build.md) and [Linux development guide](linux-development.md).
+
 The current candidate is `1.0.1rc1`. The repository already has a
 `v1.0.0` tag; this candidate does not create a release or tag. Identity is
 defined in `src/metadata.py`. Debian maps `rc` to `~rc` so an eventual

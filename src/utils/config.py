@@ -10,7 +10,12 @@ from .paths import config_dir, resource_path
 class ConfigManager:
     def __init__(self, directory: Path | None = None):
         self.config_file = (Path(directory) if directory is not None else config_dir()) / "config.json"
-        self.default_config = {"dns_provider": "Turkey DNSRedir", "theme": "System"}
+        self.default_config = {"dns_provider": "Turkey DNSRedir", "theme": "System",
+                               "spoofdpi_mode": "Normal",
+                               "linux_engine": "SpoofDPI — Proxy",
+                               "zapret_strategy": "TLS split (research)",
+                               "automatic_updates": False,
+                               "update_last_check": 0}
         if directory is None:
             self._migrate_legacy()
         self.config = self.load_config()
@@ -33,7 +38,15 @@ class ConfigManager:
         try:
             with self.config_file.open("r", encoding="utf-8") as stream:
                 data = json.load(stream)
-            return {**self.default_config, **data} if isinstance(data, dict) else self.default_config.copy()
+            if not isinstance(data, dict):
+                return self.default_config.copy()
+            # Older modes only controlled release discovery. None represented
+            # verified automatic installation, including "Automatic".
+            data.pop("update_mode", None)
+            data.pop("update_channel", None)
+            if type(data.get("automatic_updates")) is not bool:
+                data["automatic_updates"] = False
+            return {**self.default_config, **data}
         except (FileNotFoundError, ValueError, OSError):
             return self.default_config.copy()
 

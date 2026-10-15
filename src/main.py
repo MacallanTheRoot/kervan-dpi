@@ -5,11 +5,13 @@ import subprocess
 import sys
 
 from PySide6.QtCore import QTimer
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from app_controller import AppController
 from metadata import APP_NAME, ORGANIZATION, VERSION
 from ui.views.main_window import MainWindow
+from utils.paths import resource_path
 
 
 def is_admin():
@@ -33,6 +35,9 @@ def main(argv=None):
     app.setApplicationName(APP_NAME)
     app.setOrganizationName(ORGANIZATION)
     app.setApplicationVersion(VERSION)
+    brand_icon = resource_path("assets", "kervan-camel.png")
+    if brand_icon.is_file():
+        app.setWindowIcon(QIcon(str(brand_icon)))
     app.setQuitOnLastWindowClosed(False)
     controller = AppController()
     window = MainWindow(controller)
@@ -47,6 +52,7 @@ def main(argv=None):
             controller.log("System tray unavailable; opened the window instead.")
     else:
         window.show()
+    QTimer.singleShot(0, controller.check_updates)
     if "--self-test" in argv and os.environ.get("GOODBYEDPI_PACKAGED_SMOKE") == "1":
         from packaged_smoke import PackagedSmoke
         window._smoke = PackagedSmoke(app, controller, window, "--minimized" in argv)
