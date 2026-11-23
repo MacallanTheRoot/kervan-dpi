@@ -25,7 +25,7 @@ if [[ "${1:-}" == --test ]]; then
   cmake -S "$CORE" -B "$OUT/host-test" -DKV_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
   cmake --build "$OUT/host-test"
-  (cd "$OUT/host-test" && ctest --output-on-failure)
+  (cd "$OUT/host-test" && ctest --output-on-failure --timeout 120)
 fi
 
 build_slice() { # sdk archs

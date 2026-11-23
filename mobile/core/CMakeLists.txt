@@ -7,6 +7,8 @@ project(kervan_core C ASM)
 
 option(KV_WITH_TUNNEL "Build hev-socks5-tunnel (TUN -> SOCKS5)" ON)
 option(KV_BUILD_TESTS "Build host unit tests" OFF)
+# Test-only: drive ByeDPI's poll() loop (the macOS/iOS path) on Linux.
+option(KV_BYEDPI_FORCE_POLL "Use ByeDPI's poll() event loop instead of epoll" OFF)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -25,6 +27,16 @@ target_compile_definitions(kv_byedpi PRIVATE _DEFAULT_SOURCE)
 target_compile_options(kv_byedpi PRIVATE -Wno-unused -Wno-unused-parameter)
 # We drive ByeDPI through parse_args/init/start_event_loop; its main() is unused.
 set_source_files_properties(${TP}/byedpi/main.c PROPERTIES COMPILE_DEFINITIONS "main=kv_byedpi_unused_main")
+# Route conev.c's poll() loop through kv_byedpi_poll() (stop wake-up on
+# macOS/iOS, where shutdown() on a listening socket wakes nothing). The Linux
+# and Android epoll loop does not call poll(), so it is unaffected.
+if(KV_BYEDPI_FORCE_POLL OR NOT CMAKE_SYSTEM_NAME MATCHES "^(Linux|Android)$")
+  set_source_files_properties(${TP}/byedpi/conev.c PROPERTIES
+    COMPILE_OPTIONS "-include;${CMAKE_CURRENT_SOURCE_DIR}/src/kv_byedpi_poll.h")
+endif()
+if(KV_BYEDPI_FORCE_POLL)
+  target_compile_definitions(kv_byedpi PRIVATE NOEPOLL)
+endif()
 if(ANDROID)
   target_compile_definitions(kv_byedpi PRIVATE ANDROID_APP)
   target_link_libraries(kv_byedpi PRIVATE log)
@@ -99,4 +111,14 @@ if(KV_BUILD_TESTS)
   add_executable(kv_packet_mode_test tests/test_packet_mode.c)
   target_link_libraries(kv_packet_mode_test PRIVATE kervan_core)
   add_test(NAME kv_packet_mode_test COMMAND kv_packet_mode_test)
+  if(KV_BYEDPI_FORCE_POLL AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # The poll() loop (macOS/iOS path) with XNU's listening-socket
+    # shutdown() semantics emulated, so the stop path is tested on Linux.
+    foreach(t engine packet_mode)
+      add_executable(kv_${t}_test_darwin_emul tests/test_${t}.c tests/darwin_shutdown_emul.c)
+      target_link_libraries(kv_${t}_test_darwin_emul PRIVATE kervan_core)
+      add_test(NAME kv_${t}_test_darwin_emul COMMAND kv_${t}_test_darwin_emul)
+      set_tests_properties(kv_${t}_test_darwin_emul PROPERTIES TIMEOUT 60)
+    endforeach()
+  endif()
 endif()

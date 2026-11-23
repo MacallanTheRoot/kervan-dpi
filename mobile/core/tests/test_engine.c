@@ -113,8 +113,9 @@ static kv_engine_config_t base_config(uint16_t port, const char *dir)
     c.runtime_dir = dir;
     c.desync_args = "";
     c.enable_udp = 1;
-    c.require_protect = 1;
-    c.protect_cb = fake_protect;
+    /* Protect exists only on Linux/Android; elsewhere run unprotected (iOS). */
+    c.require_protect = kv_engine_supports_protect();
+    c.protect_cb = kv_engine_supports_protect() ? fake_protect : NULL;
     c.log_cb = quiet_log;
     return c;
 }
@@ -133,9 +134,17 @@ int main(void)
 
     /* invalid: protect required but missing */
     kv_engine_config_t bad = base_config(free_port(), dir);
+    bad.require_protect = 1;
     bad.protect_cb = NULL;
     CHECK(kv_engine_start(e, &bad) == KV_ERR_INVALID_ARG);
     CHECK(kv_engine_state(e) == KV_STATE_STOPPED);
+    if (!kv_engine_supports_protect()) {
+        /* no protect support: refuse instead of starting half-configured */
+        bad = base_config(free_port(), dir);
+        bad.protect_cb = fake_protect;
+        CHECK(kv_engine_start(e, &bad) == KV_ERR_INVALID_ARG);
+        CHECK(kv_engine_state(e) == KV_STATE_STOPPED);
+    }
 
     /* invalid desync argument -> proxy start error, never RUNNING */
     bad = base_config(free_port(), dir);
@@ -155,15 +164,17 @@ int main(void)
     CHECK(kv_engine_state(e) == KV_STATE_RUNNING);
     CHECK(kv_engine_start(e, &c) == KV_ERR_BUSY);
     CHECK(socks_roundtrip(port) == 1);
-    CHECK(atomic_load(&protect_calls) >= 1);
+    if (kv_engine_supports_protect()) {
+        CHECK(atomic_load(&protect_calls) >= 1);
 
-    /* 2. fail closed: protect refuses -> connection dropped, no data reaches target */
-    atomic_store(&protect_result, -1);
-    int calls_before = atomic_load(&protect_calls);
-    int bytes_before = atomic_load(&echo_bytes);
-    CHECK(socks_roundtrip(port) == 0);
-    CHECK(atomic_load(&protect_calls) > calls_before);
-    CHECK(atomic_load(&echo_bytes) == bytes_before);
+        /* 2. fail closed: protect refuses -> connection dropped, no data reaches target */
+        atomic_store(&protect_result, -1);
+        int calls_before = atomic_load(&protect_calls);
+        int bytes_before = atomic_load(&echo_bytes);
+        CHECK(socks_roundtrip(port) == 0);
+        CHECK(atomic_load(&protect_calls) > calls_before);
+        CHECK(atomic_load(&echo_bytes) == bytes_before);
+    }
 
     /* 3. stop is idempotent and releases the port */
     CHECK(kv_engine_stop(e) == KV_OK);

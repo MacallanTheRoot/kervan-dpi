@@ -88,6 +88,9 @@ typedef struct {
 typedef struct kv_engine kv_engine_t;
 
 uint32_t kv_engine_abi_version(void);
+/* 1 if protect_cb is supported (Linux/Android). Elsewhere (macOS/iOS) a
+ * config with protect_cb or require_protect is rejected: KV_ERR_INVALID_ARG. */
+int kv_engine_supports_protect(void);
 
 kv_status_t kv_engine_create(kv_engine_t **out);
 /* Blocks until RUNNING or failure (bounded by an internal timeout). */

@@ -132,6 +132,15 @@ static void component_died(struct kv_engine *e, const char *what, kv_status_t re
 
 uint32_t kv_engine_abi_version(void) { return KV_ENGINE_ABI_VERSION; }
 
+int kv_engine_supports_protect(void)
+{
+#ifdef __linux__
+    return 1; /* ByeDPI's -P (protect-path) exists only on Linux/Android */
+#else
+    return 0;
+#endif
+}
+
 const char *kv_status_string(kv_status_t s)
 {
     switch (s) {
@@ -585,6 +594,7 @@ kv_status_t kv_engine_start(kv_engine_t *e, const kv_engine_config_t *c)
 {
     if (!e || !c || c->struct_size < sizeof(kv_engine_config_t) || c->socks_port == 0 ||
         (c->require_protect && !c->protect_cb) || (c->protect_cb && !c->runtime_dir) ||
+        ((c->protect_cb || c->require_protect) && !kv_engine_supports_protect()) ||
         (c->tun_fd < -1 && c->tun_fd != KV_TUN_PACKET_MODE) ||
         (c->tun_fd == KV_TUN_PACKET_MODE && !c->packet_out_cb) ||
         (c->tun_fd != -1 && (c->tun_mtu < 576 || c->tun_mtu > 65535))) {
