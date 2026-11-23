@@ -1,0 +1,6 @@
+// Copied next to kervan_engine.h inside KervanCore.xcframework by
+// scripts/build-core.sh, so Swift can `import KervanCore`.
+module KervanCore {
+    header "kervan_engine.h"
+    export *
+}

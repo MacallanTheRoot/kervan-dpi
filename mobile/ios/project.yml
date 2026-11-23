@@ -1,0 +1,45 @@
+# XcodeGen spec (https://github.com/yonaskolb/XcodeGen). On macOS:
+#   scripts/build-core.sh && xcodegen generate && open KervanDPI.xcodeproj
+# Set DEVELOPMENT_TEAM to a team whose App IDs have the Network Extension
+# (packet tunnel) capability.
+name: KervanDPI
+options:
+  bundleIdPrefix: dev.kervan
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: 0.2.0-poc
+    CURRENT_PROJECT_VERSION: 1
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+targets:
+  KervanDPI:
+    type: application
+    platform: iOS
+    sources: [KervanDPI, Shared]
+    dependencies:
+      - target: KervanTunnel
+    scheme: {} # shared scheme for xcodebuild -scheme KervanDPI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.kervan.dpi
+        CODE_SIGN_ENTITLEMENTS: KervanDPI/KervanDPI.entitlements
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Kervan DPI
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+  KervanTunnel:
+    type: app-extension
+    platform: iOS
+    sources: [KervanTunnel, Shared]
+    dependencies:
+      - framework: build/KervanCore.xcframework
+        embed: false # static library
+      - sdk: NetworkExtension.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.kervan.dpi.tunnel
+        INFOPLIST_FILE: KervanTunnel/Info.plist
+        CODE_SIGN_ENTITLEMENTS: KervanTunnel/KervanTunnel.entitlements

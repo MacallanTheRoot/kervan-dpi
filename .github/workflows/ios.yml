@@ -1,0 +1,117 @@
+name: iOS build (unsigned)
+
+# Compile-only validation of the shared C engine and the iOS app + Packet
+# Tunnel extension on a GitHub macOS runner. No signing, no credentials, no
+# artifacts that can be installed. A green run proves the sources compile and
+# link; it does not prove the VPN works or that Apple policy is met.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'mobile/core/**'
+      - 'mobile/ios/**'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    paths:
+      - 'mobile/core/**'
+      - 'mobile/ios/**'
+      - '.github/workflows/ios.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Toolchain versions
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+          cmake --version | head -1
+
+      - name: Static project checks
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet pyyaml
+          "$RUNNER_TEMP/venv/bin/python" mobile/ios/scripts/check_project.py
+
+      - name: Fetch pinned engine sources
+        run: mobile/core/third_party/fetch.sh
+
+      # Host tests on macOS run the Darwin utun framing path (KV_TUN_HEAD = 4)
+      # that Linux cannot exercise, then build KervanCore.xcframework.
+      - name: Engine host tests + xcframework
+        run: mobile/ios/scripts/build-core.sh --test
+
+      # Pinned release + checksum (verified 2026-11-23) for reproducible projects.
+      - name: Install XcodeGen 2.48.0
+        run: |
+          curl -sSL --retry 3 -o "$RUNNER_TEMP/xcodegen.zip" \
+            https://github.com/yonaskolb/XcodeGen/releases/download/2.48.0/xcodegen.zip
+          echo "620c9f0dc10849f94728ab5df52d225ebab8187439dd6fee1925e59e80dff892  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/xcodegen/bin/xcodegen" --version
+
+      - name: Generate Xcode project
+        working-directory: mobile/ios
+        run: xcodegen generate --spec project.yml
+
+      - name: Build for iOS Simulator (unsigned)
+        working-directory: mobile/ios
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project KervanDPI.xcodeproj -scheme KervanDPI -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/xcodebuild-simulator.log
+
+      - name: Build for iOS device (unsigned, compile and link only)
+        working-directory: mobile/ios
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project KervanDPI.xcodeproj -scheme KervanDPI -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/xcodebuild-device.log
+
+      - name: Compiler diagnostics summary
+        if: always()
+        working-directory: mobile/ios
+        run: |
+          {
+            echo '## iOS compiler diagnostics'
+            for log in build/xcodebuild-*.log; do
+              [ -f "$log" ] || continue
+              echo "### $(basename "$log")"
+              echo '```'
+              grep -E '(error|warning): ' "$log" | sort -u | head -100 || echo 'none'
+              echo '```'
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-logs
+          path: |
+            mobile/ios/build/xcodebuild-*.log
+          if-no-files-found: ignore
