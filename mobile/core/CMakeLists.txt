@@ -40,6 +40,10 @@ if(KV_WITH_TUNNEL)
   set(HEV_YAML ${HEV}/third-part/yaml)
 
   file(GLOB_RECURSE HEV_TS_SRC ${HEV_TS}/src/*.c ${HEV_TS}/src/*.S)
+  # On case-insensitive file systems (macOS) the *.S glob also matches the
+  # per-arch *.s files that the .S wrappers #include. Upstream builds only
+  # %.c and %.S (case-sensitive), so filter the same way.
+  list(FILTER HEV_TS_SRC INCLUDE REGEX "\\.(c|S)$")
   add_library(kv_hev_task_system STATIC ${HEV_TS_SRC})
   target_include_directories(kv_hev_task_system PRIVATE ${HEV_TS}/src PUBLIC ${HEV_TS}/include)
   target_compile_options(kv_hev_task_system PRIVATE -fvisibility=hidden)
@@ -63,6 +67,7 @@ if(KV_WITH_TUNNEL)
     YAML_VERSION_PATCH=5 YAML_VERSION_STRING="0.2.5")
 
   file(GLOB_RECURSE HEV_SRC ${HEV}/src/*.c ${HEV}/src/*.S)
+  list(FILTER HEV_SRC INCLUDE REGEX "\\.(c|S)$")
   list(FILTER HEV_SRC EXCLUDE REGEX ".*/hev-jni\\.c$") # we provide our own JNI
   add_library(kv_hev STATIC ${HEV_SRC})
   target_include_directories(kv_hev PRIVATE ${HEV}/src ${HEV}/src/misc ${HEV}/src/core/include
