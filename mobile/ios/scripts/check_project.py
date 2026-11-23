@@ -97,6 +97,16 @@ def main():
         check(any((IOS / s).rglob(f"{asset}.imageset") for s in app["sources"]),
               f"image asset {asset} missing")
 
+    # XcodeGen sets ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon for apps; the
+    # first macOS build failed without it (run 45225923451).
+    icon_sets = [p for s in app["sources"] for p in (IOS / s).rglob("AppIcon.appiconset")]
+    check(len(icon_sets) == 1, "app target needs exactly one AppIcon.appiconset")
+    for icon_set in icon_sets:
+        contents = __import__("json").loads((icon_set / "Contents.json").read_text())
+        for image in contents.get("images", []):
+            name = image.get("filename")
+            check(name is not None and (icon_set / name).is_file(), f"AppIcon image {name} missing")
+
     if failures:
         for f in failures:
             print("FAIL", f)
