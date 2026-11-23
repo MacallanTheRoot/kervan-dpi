@@ -1,5 +1,7 @@
 import Foundation
-import NetworkExtension
+// NetworkExtension is not Sendable-annotated; Swift 6 suggested this for
+// NETunnelProviderManager crossing into the main actor (run 45228498355).
+@preconcurrency import NetworkExtension
 import Observation
 
 /// Owns the app's single NETunnelProviderManager and mirrors its status.
@@ -20,10 +22,16 @@ final class TunnelController {
     /// Loads the saved configuration and follows status changes for the app's lifetime.
     func observe() async {
         await load()
-        for await note in NotificationCenter.default.notifications(named: .NEVPNStatusDidChange) {
-            guard let connection = note.object as? NEVPNConnection,
-                  connection === manager?.connection else { continue }
-            update(connection.status)
+        // Notification is not Sendable: reduce it to Sendable values before it
+        // reaches the main actor.
+        let changes = NotificationCenter.default.notifications(named: .NEVPNStatusDidChange)
+            .compactMap { @Sendable note -> (ObjectIdentifier, NEVPNStatus)? in
+                guard let connection = note.object as? NEVPNConnection else { return nil }
+                return (ObjectIdentifier(connection), connection.status)
+            }
+        for await (id, newStatus) in changes {
+            guard let connection = manager?.connection, ObjectIdentifier(connection) == id else { continue }
+            update(newStatus)
         }
     }
 
