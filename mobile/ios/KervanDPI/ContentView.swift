@@ -1,10 +1,11 @@
-import NetworkExtension
 import SwiftUI
 
 /// Minimal main screen, same structure as the Android one: status, one
 /// action, an access check. Branding follows the Fix04 camel and slogan.
 struct ContentView: View {
     let tunnel: TunnelController
+
+    private var ui: TunnelPresentation { TunnelPresentation(status: tunnel.status) }
 
     var body: some View {
         VStack(spacing: 24) {
@@ -13,13 +14,14 @@ struct ContentView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(maxWidth: 160)
-                .saturation(tunnel.status == .connected ? 1 : 0)
+                .saturation(ui.engineRunning ? 1 : 0)
                 .accessibilityHidden(true)
 
             VStack(spacing: 8) {
-                Text(headline)
+                Text(ui.headline)
                     .font(.title2.weight(.medium))
-                Text(detail)
+                    .accessibilityIdentifier("status.headline")
+                Text(ui.detail)
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -31,7 +33,7 @@ struct ContentView: View {
                 }
             }
 
-            if tunnel.status == .connected {
+            if ui.engineRunning {
                 accessRow
             }
             Spacer()
@@ -42,22 +44,6 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(24)
-    }
-
-    private var headline: LocalizedStringKey {
-        switch tunnel.status {
-        case .connected: "Engine running"
-        case .connecting, .reasserting: "Starting"
-        case .disconnecting: "Stopping"
-        default: "Off"
-        }
-    }
-
-    private var detail: LocalizedStringKey {
-        switch tunnel.status {
-        case .connected: "Traffic passes through Kervan. Check access to confirm a site works."
-        default: "Traffic goes directly to your network."
-        }
     }
 
     @ViewBuilder
@@ -81,15 +67,16 @@ struct ContentView: View {
 
     @ViewBuilder
     private var primaryAction: some View {
-        if tunnel.isBusy {
+        switch ui.action {
+        case .busy:
             ProgressView()
                 .frame(height: 50)
-        } else if tunnel.status == .connected {
+        case .turnOff:
             Button("Turn off") { tunnel.turnOff() }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
                 .frame(maxWidth: .infinity)
-        } else {
+        case .turnOn:
             Button("Turn on") {
                 Task { await tunnel.turnOn() }
             }

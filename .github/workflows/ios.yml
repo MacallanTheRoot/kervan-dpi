@@ -92,6 +92,24 @@ jobs:
             -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/xcodebuild-device.log
 
+      # Runs after both builds so a test failure never hides a compile result.
+      # Unit tests: status text for every NEVPNStatus. UI tests: launch, and
+      # Turn on failing closed (the Simulator runs no packet tunnel).
+      - name: Simulator smoke tests
+        working-directory: mobile/ios
+        run: |
+          set -o pipefail
+          udid=$(xcrun simctl list devices available -j | jq -r '[.devices | to_entries[]
+            | select(.key | test("iOS")) | .value[] | select(.name | startswith("iPhone"))] | last | .udid // empty')
+          [ -n "$udid" ] || { echo "no available iPhone simulator"; exit 1; }
+          xcrun simctl list devices available | grep "$udid"
+          xcodebuild test \
+            -project KervanDPI.xcodeproj -scheme KervanDPI -configuration Debug \
+            -destination "id=$udid" \
+            -derivedDataPath build/DerivedData \
+            -resultBundlePath build/KervanDPI-tests.xcresult \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/xcodebuild-test.log
+
       - name: Compiler diagnostics summary
         if: always()
         working-directory: mobile/ios
@@ -103,6 +121,7 @@ jobs:
               echo "### $(basename "$log")"
               echo '```'
               grep -E '(error|warning): ' "$log" | sort -u | head -100 || echo 'none'
+              grep -E "Test Case '.*' (passed|failed)|Executed [0-9]+ tests?" "$log" | head -50 || true
               echo '```'
             done
           } >> "$GITHUB_STEP_SUMMARY"
@@ -114,4 +133,5 @@ jobs:
           name: ios-build-logs
           path: |
             mobile/ios/build/xcodebuild-*.log
+            mobile/ios/build/KervanDPI-tests.xcresult
           if-no-files-found: ignore

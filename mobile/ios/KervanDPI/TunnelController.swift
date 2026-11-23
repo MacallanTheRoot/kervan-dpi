@@ -15,10 +15,6 @@ final class TunnelController {
 
     private var manager: NETunnelProviderManager?
 
-    var isBusy: Bool {
-        status == .connecting || status == .disconnecting || status == .reasserting
-    }
-
     /// Loads the saved configuration and follows status changes for the app's lifetime.
     func observe() async {
         await load()

@@ -21,7 +21,8 @@ targets:
     sources: [KervanDPI, Shared]
     dependencies:
       - target: KervanTunnel
-    scheme: {} # shared scheme for xcodebuild -scheme KervanDPI
+    scheme: # shared scheme for xcodebuild -scheme KervanDPI
+      testTargets: [KervanDPITests, KervanDPIUITests]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.kervan.dpi
@@ -43,3 +44,23 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: dev.kervan.dpi.tunnel
         INFOPLIST_FILE: KervanTunnel/Info.plist
         CODE_SIGN_ENTITLEMENTS: KervanTunnel/KervanTunnel.entitlements
+  KervanDPITests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [KervanDPITests]
+    dependencies:
+      - target: KervanDPI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.kervan.dpi.tests
+        GENERATE_INFOPLIST_FILE: YES
+  KervanDPIUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [KervanDPIUITests]
+    dependencies:
+      - target: KervanDPI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.kervan.dpi.uitests
+        GENERATE_INFOPLIST_FILE: YES
