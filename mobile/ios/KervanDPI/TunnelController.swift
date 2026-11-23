@@ -50,7 +50,7 @@ final class TunnelController {
         guard status == .connected, !checking else { return }
         checking = true
         defer { checking = false }
-        let result = await AccessCheck.run(url: URL(string: "https://discord.com/")!)
+        let result = await AccessCheck.run()
         // Keep it only if the same session is still up.
         if status == .connected { accessCheck = result }
     }

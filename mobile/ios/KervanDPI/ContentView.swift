@@ -51,7 +51,7 @@ struct ContentView: View {
         HStack {
             if let check = tunnel.accessCheck {
                 Text("\(check.host): \(check.detail)")
-                    .foregroundStyle(check.reachable ? Color.primary : Color.red)
+                    .foregroundStyle(check.outcome == .verified ? Color.primary : Color.red)
             } else {
                 Text("Access not checked")
                     .foregroundStyle(.secondary)
