@@ -10,8 +10,7 @@ import Observation
 final class TunnelController {
     private(set) var status: NEVPNStatus = .invalid
     private(set) var lastError: String?
-    private(set) var accessCheck: AccessCheck?
-    private(set) var checking = false
+    let access = AccessCheckModel(probe: { await AccessProbe.run($0, engineRunning: $1) })
 
     private var manager: NETunnelProviderManager?
 
@@ -45,16 +44,6 @@ final class TunnelController {
         manager?.connection.stopVPNTunnel()
     }
 
-    /// Real HTTPS request through the tunnel; shown as-is, never as bypass proof.
-    func checkAccess() async {
-        guard status == .connected, !checking else { return }
-        checking = true
-        defer { checking = false }
-        let result = await AccessCheck.run()
-        // Keep it only if the same session is still up.
-        if status == .connected { accessCheck = result }
-    }
-
     private func load() async {
         let managers = (try? await NETunnelProviderManager.loadAllFromPreferences()) ?? []
         manager = managers.first
@@ -62,8 +51,12 @@ final class TunnelController {
     }
 
     private func update(_ newStatus: NEVPNStatus) {
-        if newStatus != .connected { accessCheck = nil }
         status = newStatus
+        switch newStatus {
+        case .connected: access.engineChanged(to: .running)
+        case .connecting, .reasserting, .disconnecting: access.engineChanged(to: .changing)
+        default: access.engineChanged(to: .off)
+        }
     }
 
     /// Creates or refreshes the on-device tunnel configuration. The first save

@@ -107,6 +107,12 @@ def main():
             name = image.get("filename")
             check(name is not None and (icon_set / name).is_file(), f"AppIcon image {name} missing")
 
+    # About ships the license text of every engine component at its pinned commit.
+    notices = (IOS / "KervanDPI" / "Acknowledgements.txt").read_text()
+    third_party = (IOS.parent / "core" / "third_party" / "README.md").read_text()
+    for commit in re.findall(r"`([0-9a-f]{40})`", third_party):
+        check(commit in notices, f"Acknowledgements.txt lacks pinned commit {commit}")
+
     if failures:
         for f in failures:
             print("FAIL", f)

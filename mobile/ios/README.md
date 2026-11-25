@@ -16,7 +16,7 @@ SwiftUI app (KervanDPI)                     Packet Tunnel extension (KervanTunne
 - **No utun fd.** The core's *packet mode* (`tun_fd = KV_TUN_PACKET_MODE`) bridges `NEPacketTunnelFlow` to hev-socks5-tunnel over a private `socketpair`. It adds and strips the 4-byte Darwin utun family header that hev expects on Apple. The undocumented "scan fds for the utun socket" trick is not used.
 - **No protect callback** (`require_protect = 0`). Sockets opened by the provider are expected to bypass its own tunnel. Apple's docs do not state this, so it must be confirmed on device (test 3 below).
 - **Fail closed.** Engine `FAILED` → stop the engine → `cancelTunnelWithError`. `startTunnel` returns only after the engine reports `RUNNING`, so iOS "Connected" means "engine serving" and never "bypass works".
-- Default strategy `-d1 -s1+s -r1+s` and Cloudflare DNS, the same as Android defaults. There is no settings screen on iOS yet.
+- Default strategy `-d1 -s1+s -r1+s` and Cloudflare DNS, the same as Android defaults. The strategy and DNS cannot be changed in the app. Settings holds the connection check target and About.
 
 ## Files
 
@@ -25,7 +25,7 @@ SwiftUI app (KervanDPI)                     Packet Tunnel extension (KervanTunne
 | `scripts/build-core.sh` | CMake → `build/KervanCore.xcframework` (iphoneos arm64, simulator arm64+x86_64). `--test` also runs the C tests natively on macOS, which exercises the Darwin framing path. |
 | `KervanCore/module.modulemap` | `import KervanCore` |
 | `KervanTunnel/` | `PacketTunnelProvider`, `KervanEngine`, `EngineError`, Info.plist, entitlements |
-| `KervanDPI/` | SwiftUI app, `TunnelController`, `AccessCheck`, assets (camel, accent #315FA7) |
+| `KervanDPI/` | SwiftUI app, `TunnelController`, connection check (`AccessTarget`, `AccessProbe`, `AccessCheck`, `AccessCheckModel`), Settings and About, `Acknowledgements.txt` (update it with the engine's pinned commits; `check_project.py` compares them), assets (camel, accent #315FA7) |
 | `Shared/TunnelIdentity.swift` | Bundle IDs and defaults, in both targets |
 | `project.yml` | XcodeGen spec; signing settings come from `ios-signed.yml` |
 
@@ -116,7 +116,7 @@ TestFlight is the alternative to steps 1, 6 and 7. It needs a Distribution certi
 ## Device test plan (iPhone 14 Pro)
 
 1. Turn on → iOS prompts to add a VPN configuration → status shows "Engine running".
-2. Check → `discord.com: HTTP 200` on Wi-Fi and on cellular. Then repeat with an empty strategy to show the desync is what makes the difference (A/B/A, as on Android).
+2. Settings → Connection Check: choose a site that this network blocks (custom address) and run Check now with Kervan off, on, and off again, on Wi-Fi and on cellular. Only fails/answers/fails on the same network suggests that Kervan makes the difference. The built-in targets are usually not blocked, so they show reachability only. A custom address's content is not checked: open the site in a browser too.
 3. Loop check: Console.app, subsystem `dev.kervan.dpi.tunnel`, should show no repeating connection storm. Traffic should keep flowing for 5 minutes.
 4. Turn off → the VPN icon disappears and normal browsing still works.
 5. Repeat Turn on/off 5 times. Then turn the VPN off from iOS Settings while it is running.

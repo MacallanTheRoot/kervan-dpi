@@ -4,10 +4,26 @@ import SwiftUI
 /// action, an access check. Branding follows the Fix04 camel and slogan.
 struct ContentView: View {
     let tunnel: TunnelController
+    @State private var showingSettings = false
 
     private var ui: TunnelPresentation { TunnelPresentation(status: tunnel.status) }
 
     var body: some View {
+        NavigationStack {
+            home
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Settings", systemImage: "gearshape") { showingSettings = true }
+                            .accessibilityIdentifier("home.settings")
+                    }
+                }
+        }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView(tunnel: tunnel)
+        }
+    }
+
+    private var home: some View {
         VStack(spacing: 24) {
             Spacer()
             Image("KervanCamel")
@@ -39,7 +55,7 @@ struct ContentView: View {
             Spacer()
 
             primaryAction
-            Text("Yol Açık, Kervan Yürür.")
+            Text(AppInfo.slogan)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -49,18 +65,21 @@ struct ContentView: View {
     @ViewBuilder
     private var accessRow: some View {
         HStack {
-            if let check = tunnel.accessCheck {
+            if let check = tunnel.access.result {
                 Text("\(check.host): \(check.detail)")
-                    .foregroundStyle(check.outcome == .verified ? Color.primary : Color.red)
+                    .foregroundStyle(check.outcome.isFailure ? Color.red : Color.primary)
+            } else if tunnel.access.target == nil {
+                Text("Custom address not valid. Change it in Settings.")
+                    .foregroundStyle(.secondary)
             } else {
                 Text("Access not checked")
                     .foregroundStyle(.secondary)
             }
             Spacer()
             Button("Check") {
-                Task { await tunnel.checkAccess() }
+                Task { await tunnel.access.check() }
             }
-            .disabled(tunnel.checking)
+            .disabled(!tunnel.access.canCheck)
         }
         .font(.callout)
     }
