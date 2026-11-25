@@ -1,0 +1,114 @@
+<resources>
+    <string name="app_name" translatable="false">Kervan DPI</string>
+    <string name="slogan" translatable="false">Yol Açık, Kervan Yürür.</string>
+
+    <string name="status_stopped">Off</string>
+    <string name="status_starting">Starting</string>
+    <string name="status_running">On</string>
+    <string name="status_stopping">Stopping</string>
+    <string name="status_failed">Not running</string>
+    <string name="headline_stopped">Traffic goes the usual way</string>
+    <string name="headline_starting">Starting the engine</string>
+    <string name="headline_running">Traffic passes through Kervan</string>
+    <string name="headline_stopping">Stopping the engine</string>
+    <string name="headline_failed">Kervan could not start</string>
+    <string name="detail_stopped">Turn on to route this phone\'s traffic through the engine on the device.</string>
+    <string name="detail_running_checked">Whether a blocked site opens depends on your network.</string>
+    <string name="detail_running">Whether a blocked site opens depends on your network. Run a check to see.</string>
+
+    <string name="action_enable">Turn on</string>
+    <string name="action_disable">Turn off</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_reconnect">Reconnect</string>
+    <string name="action_check">Check</string>
+    <string name="reconnect_needed">Settings changed. Reconnect to apply them.</string>
+
+    <string name="row_method">Method</string>
+    <string name="value_recommended">Recommended</string>
+    <string name="value_custom">Custom</string>
+    <string name="value_relay_only">Relay only</string>
+    <string name="row_dns">DNS</string>
+    <string name="row_access">Access check</string>
+    <string name="access_unchecked">Not checked yet</string>
+    <string name="access_checking">Checking</string>
+
+    <string name="nav_settings">Settings</string>
+    <string name="nav_back">Back</string>
+    <string name="settings_title">Settings</string>
+    <string name="applies_on_reconnect">Changes apply the next time Kervan connects.</string>
+    <string name="section_engine">Engine</string>
+    <string name="advanced_title">Advanced mode</string>
+    <string name="advanced_summary">Choose methods and DNS yourself. Off uses the recommended setup.</string>
+    <string name="section_methods">Methods</string>
+    <string name="method_disorder">Disorder first packet</string>
+    <string name="method_disorder_sum">Sends the start of the request out of order · -d1</string>
+    <string name="method_split">Split at server name</string>
+    <string name="method_split_sum">Splits the first packet at the TLS SNI · -s1+s</string>
+    <string name="method_tlsrec">Split TLS record</string>
+    <string name="method_tlsrec_sum">Starts a new TLS record at the SNI · -r1+s</string>
+    <string name="method_oob">Out-of-band byte</string>
+    <string name="method_oob_sum">Adds one urgent byte at the split · -o1</string>
+    <string name="relay_only_warning">No method selected. Traffic will be relayed unchanged.</string>
+    <string name="section_custom">Custom arguments</string>
+    <string name="custom_hint">ByeDPI arguments. When set, they replace the methods above.</string>
+    <string name="custom_error">Not applied: %1$s</string>
+    <string name="section_dns">DNS resolver</string>
+    <string name="dns_summary">Announced to apps on this phone. Queries travel through the engine.</string>
+    <string name="action_reset">Reset to recommended</string>
+    <string name="section_activity">Activity</string>
+    <string name="activity_empty">No activity yet</string>
+    <string name="section_about">About</string>
+    <string name="about_text">Runs entirely on this device. There is no remote server, and Kervan does not provide anonymity or encryption.</string>
+    <string name="version">Version %1$s</string>
+
+    <string name="notif_channel">Engine status</string>
+    <string name="notif_text">The engine on this device is running</string>
+
+    <string name="access_verified">%1$s gave its expected reply at %2$s</string>
+    <string name="access_answered">%1$s answered at %2$s. Content not checked.</string>
+    <string name="access_redirected">%1$s redirected elsewhere at %2$s. Not followed: block and login pages do this.</string>
+    <string name="access_other_status">%1$s: unexpected answer (HTTP %3$d) at %2$s</string>
+    <string name="access_other_reply">%1$s: not its own reply at %2$s. Block and login pages look like this.</string>
+    <string name="access_untrusted">%1$s: certificate not trusted at %2$s. The answer was rejected.</string>
+    <string name="access_dns">%1$s: name could not be resolved at %2$s</string>
+    <string name="access_fail">%1$s did not respond at %2$s</string>
+    <string name="check_engine_on">Kervan was on.</string>
+    <string name="check_engine_off">Kervan was off.</string>
+    <string name="section_check">Connection check</string>
+    <string name="action_check_now">Check now</string>
+    <string name="check_note">One HTTPS request to the selected site. It shows whether that site answers on this network, nothing more. To learn whether Kervan makes the difference, run it with Kervan off and on.</string>
+    <string name="target_custom">Custom address</string>
+    <string name="target_custom_sum">Content is not checked</string>
+    <string name="target_custom_hint">For example https://example.org</string>
+    <string name="target_custom_error">Use a public https:// address, without a port, user name or IP address.</string>
+    <string name="target_invalid">Custom address not valid. Change it in Settings.</string>
+
+    <string name="about_open">About Kervan DPI</string>
+    <string name="about_project">Project</string>
+    <string name="about_developer">Developer</string>
+    <string name="about_repository">Project repository</string>
+    <string name="opens_browser">open in browser</string>
+    <string name="no_browser">No browser found.</string>
+    <string name="about_licenses">Licenses</string>
+    <string name="about_license">License</string>
+    <string name="about_license_sum">Application code: MIT License. The camel artwork and third-party components are not covered by it.</string>
+    <string name="about_acknowledgements">Open-source acknowledgements</string>
+    <string name="about_acknowledgements_sum">Engine components and libraries</string>
+    <string name="about_privacy">Privacy</string>
+    <string name="privacy_no_collection">There is no account, analytics or advertising. The app sends nothing to its developer.</string>
+    <string name="privacy_traffic">Traffic is processed on this phone and then goes to its destination over your own network. Your IP address is not hidden.</string>
+    <string name="privacy_dns">While Kervan is on, apps are given the DNS resolver shown under Diagnostics. Its operator applies its own privacy policy.</string>
+    <string name="privacy_check">A connection check contacts only the selected address, and only when you start it. That site sees a request from your IP address. Answers are not stored.</string>
+    <string name="privacy_storage">Settings stay on this phone and are excluded from backup. Engine messages and check results go to the Activity list and the Android system log, with a custom address reduced to its host name.</string>
+    <string name="privacy_local_proxy">While Kervan is on, its engine listens on this phone\'s loopback address without a password, so another app on this phone could connect to it.</string>
+    <string name="about_diagnostics">Diagnostics</string>
+    <string name="action_share">Share diagnostics</string>
+    <string name="diag_version">Version name</string>
+    <string name="diag_code">Version code</string>
+    <string name="diag_platform">Platform</string>
+    <string name="diag_status">Status</string>
+    <string name="diag_args">Engine arguments</string>
+    <string name="diag_target">Check target</string>
+    <string name="diag_last_check">Last check</string>
+    <string name="value_none">None</string>
+</resources>

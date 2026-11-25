@@ -1,0 +1,10 @@
+core/third_party/src/
+core/build*/
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/app/.cxx/
+android/local.properties
+ios/build/
+ios/*.xcodeproj/

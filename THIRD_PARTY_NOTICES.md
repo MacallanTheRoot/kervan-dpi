@@ -16,3 +16,22 @@ For Qt/PySide6 source availability and a practical modified-library rebuild
 path, see [Qt LGPL compliance](docs/qt-lgpl-compliance.md). The release assets
 include version-matched Qt/PySide6, WinDivert and GoodbyeDPI sources and the application build source.
 The LGPL permits reverse engineering for debugging library modifications.
+
+## Android 0.2.0-beta1
+
+The Android APK contains none of the components listed above. It contains these; the full
+license texts are in the app (Settings > About > Open-source notices) and in
+[`acknowledgements.txt`](mobile/android/app/src/main/res/raw/acknowledgements.txt).
+
+| Component | License | Source |
+| --- | --- | --- |
+| ByeDPI (with kavl.h) | MIT | [hufrea/byedpi](https://github.com/hufrea/byedpi) `e2684772fbda45f2ff4fc220922a010370534216` |
+| hev-socks5-tunnel | MIT | [heiher/hev-socks5-tunnel](https://github.com/heiher/hev-socks5-tunnel) `fc3f90040b8d4b537341c96538669a9b2e35d514` |
+| hev-socks5-core | MIT | submodule `f8c08a64482c22c48a971bde22ce47c113b4d7af` |
+| hev-task-system | MIT | submodule `ded55c412b3951bc7decb5cb3b9135701e762998` |
+| lwIP (hev fork) | BSD 3-Clause | submodule `8115cd6150ab32500db3d4d8bd8ad7ec6648534c` |
+| libyaml (hev fork) | MIT | submodule `0c82efd10dc67b9e7f159d2c7f5d1dc3c1b5bc11` |
+| AndroidX / Jetpack Compose / Material 3, Kotlin standard library, kotlinx.coroutines, kotlinx.serialization, JetBrains annotations, Guava ListenableFuture, JSpecify | Apache License 2.0 | Versions in `mobile/android/gradle/libs.versions.toml` |
+
+The blue camel image was generated through ChatGPT for this project at the owner's request.
+It is not claimed to be MIT licensed, and no exclusivity or trademark registration is claimed.
