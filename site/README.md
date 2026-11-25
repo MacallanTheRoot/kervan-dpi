@@ -1,35 +1,25 @@
-# Kervan DPI website preview · V3
+# Kervan DPI website
 
-A bilingual Turkish/English static website. Runtime files are plain HTML, CSS, JavaScript, the approved camel PNG, original packet-diagram SVGs, and locally vendored GSAP. No build step, framework, or external font request is required.
+Static Turkish/English site for GitHub Pages: plain HTML, CSS and JavaScript, no build step and no third-party requests except one call to the GitHub Releases API.
 
 ## Preview
-
-From the repository root:
 
 ```sh
 python3 -m http.server 8765 --directory site
 ```
 
-Open <http://localhost:8765/>. Relative stylesheet, script, and image paths also work when these files are served at `/kervan-dpi/`.
+Open <http://localhost:8765/> (add `?lang=en` for English). All paths are relative, so it also works under `/kervan-dpi/`.
 
-## Editorial design
+## Design
 
-The off-white page places an oversized product statement beside concise engine facts. The approved blue camel mark stays small. Type, asymmetric columns, whitespace, and thin rules carry the hierarchy; navy supports the brand story and footer. The packet diagrams are original conceptual drawings in desktop and mobile arrangements. They distinguish packet fields that DPI may inspect from the application's separate engine controls. They are not exact packet formats or claims of traffic rerouting or verified bypass. No authentic Fix04 screenshot was found in the available repository assets, so the site does not show a fabricated one.
+Night to day and back: a navy hero, daylight sections, a navy close. Colours come from the approved camel mark; ember `#ffab85` means only "cut off". Type is Instrument Sans (OFL 1.1, self-hosted subset), condensed and tight at display sizes.
 
-Key colors: navy `#0b1724`, paper `#f4f3ee`, ink `#151e25`, blue `#08679f`. Keyboard focus uses blue on paper and light blue on navy. Content width is 1240 px. Layout changes at 880 and 650 px, with a further compact adjustment at 430 px.
+One thing moves, on a loop with a pause button: the hero scene, where a packet carrying a site's name meets a caravanserai gate that reads it, with Kervan off or on. CSS draws both end states, so it is complete without JavaScript, without GSAP and with reduced motion. `motion.js` (GSAP core 3.15.0) only plays the journey between them. Platform tabs follow the ARIA tabs pattern; without JavaScript every panel is shown.
 
-## Motion
+## Content
 
-`motion.js` adds a short hero timeline, one-time section reveals, and a one-time packet sequence. It uses only opacity and small translations for page content. The diagram sequence briefly emphasizes the existing conceptual IP, transport, protocol, and UI-to-engine elements. The original `<picture>` remains visible when JavaScript is disabled or the optional SVG enhancement fails. Reduced-motion users see all content immediately, with no entrance or scroll animation. CSS handles hover feedback and the mobile menu.
+Turkish is the document; English lives in `script.js`. Change both together. Status claims and the progress table are dated; update the date when they change. Never state bypass, VPN, anonymity or downloads beyond the evidence. Pre-release wording beside the Windows link must be reviewed when a stable version ships.
 
-GSAP core and ScrollTrigger are pinned at **3.15.0** and served from `vendor/gsap/`; no CDN is needed. Their original license headers remain in the files. See [the vendor notice](vendor/gsap/NOTICE.md) for GreenSock's Standard License and source. GSAP is not covered by this repository's MIT license.
+## Publishing
 
-## Product boundaries
-
-Windows Fix04 was locally tested and remains on public-release HOLD. Linux K4 passed offline tests; native system-wide bypass is unverified. Android and iOS are planned. Public `v1.0.1-rc1` belongs to the older GoodbyeDPI Turkey identity and is not either current candidate. The page makes no VPN, anonymity, IP masking, or universal access claim.
-
-The owner confirms that the approved blue camel image was generated through ChatGPT specifically for Kervan DPI. The website copy is byte-for-byte identical to `assets/kervan-camel.png`; its source and export hashes are recorded in `docs/branding/kervan-camel-source.md`. No trademark registration, exclusivity, or MIT license is claimed for the image. Public publication remains subject to owner authorization. The footer links to the application license and third-party notices.
-
-## GitHub Pages proposal · not executed
-
-The GitHub repository is already [MacallanTheRoot/kervan-dpi](https://github.com/MacallanTheRoot/kervan-dpi). A manual-only workflow is prepared at `.github/workflows/pages.yml`; it uploads an explicit ten-file website artifact, excluding this README, screenshots, and application sources. After owner authorization and the artwork rights review, set Pages source to GitHub Actions, dispatch the workflow from `main`, then verify `https://macallantheroot.github.io/kervan-dpi/` and its links. Do not rename the local directory or change its remote as part of website work. No commit, push, tag, release, or Pages publication was performed for this preview.
+`.github/workflows/pages.yml` is manual-only and stages an explicit ten-file list; add any new asset there. `assets/packet-anatomy*.svg` and `vendor/gsap/ScrollTrigger.min.js` are no longer used or staged.

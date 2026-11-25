@@ -29,10 +29,10 @@ jobs:
           install -Dm644 site/script.js "$destination/script.js"
           install -Dm644 site/motion.js "$destination/motion.js"
           install -Dm644 site/assets/kervan-camel.png "$destination/assets/kervan-camel.png"
-          install -Dm644 site/assets/packet-anatomy.svg "$destination/assets/packet-anatomy.svg"
-          install -Dm644 site/assets/packet-anatomy-mobile.svg "$destination/assets/packet-anatomy-mobile.svg"
+          install -Dm644 site/assets/og.png "$destination/assets/og.png"
+          install -Dm644 site/assets/fonts/instrument-sans.woff2 "$destination/assets/fonts/instrument-sans.woff2"
+          install -Dm644 site/assets/fonts/OFL.txt "$destination/assets/fonts/OFL.txt"
           install -Dm644 site/vendor/gsap/gsap.min.js "$destination/vendor/gsap/gsap.min.js"
-          install -Dm644 site/vendor/gsap/ScrollTrigger.min.js "$destination/vendor/gsap/ScrollTrigger.min.js"
           install -Dm644 site/vendor/gsap/NOTICE.md "$destination/vendor/gsap/NOTICE.md"
           test "$(find "$destination" -type f | wc -l)" -eq 10
       - uses: actions/configure-pages@v6.0.0
