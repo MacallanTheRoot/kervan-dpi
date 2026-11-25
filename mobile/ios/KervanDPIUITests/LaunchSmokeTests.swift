@@ -101,6 +101,8 @@ final class LaunchSmokeTests: XCTestCase {
         developer.tap()
         let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
         XCTAssertTrue(safari.wait(for: .runningForeground, timeout: 20))
-        safari.terminate()
+        // Leave the app in front: terminating it suspended hung the next launch (run 45588697911).
+        app.activate()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
     }
 }
