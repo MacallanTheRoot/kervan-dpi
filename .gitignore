@@ -16,3 +16,14 @@ __pycache__/
 *.deb
 *.tar.gz
 *.zip
+
+# iOS signing material and signed builds: never commit
+*.p12
+*.mobileprovision
+*.cer
+*.csr
+*.certSigningRequest
+*.key
+*.pem
+*.ipa
+*.ipa.enc

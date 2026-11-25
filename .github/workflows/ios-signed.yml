@@ -1,0 +1,194 @@
+name: iOS signed development build
+
+# Started by a push that changes this file on ios/first-cloud-build; the
+# ios-signing environment then holds the job until its reviewer approves.
+# (workflow_dispatch needs the file on the default branch.) Signs the app and the Packet Tunnel extension with the
+# owner's Apple Development certificate and two development provisioning
+# profiles (registered iPhone only). The IPA is encrypted before upload
+# because the embedded profile names the team and the device UDID, and the
+# repository is public.
+#
+# Secrets, all in the GitHub environment "ios-signing" (never in Git):
+#   IOS_DEV_P12_BASE64         Apple Development certificate + key (.p12, base64)
+#   IOS_DEV_P12_PASSWORD       its export password
+#   IOS_APP_PROFILE_BASE64     development profile for dev.kervan.dpi (base64)
+#   IOS_TUNNEL_PROFILE_BASE64  development profile for dev.kervan.dpi.tunnel (base64)
+#   IOS_IPA_PASSPHRASE         passphrase for the encrypted IPA artifact
+#
+# A signed IPA proves signing only. It does not prove the VPN works, that
+# bypass works, or that Apple would distribute the app.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ios/first-cloud-build]
+    paths: ['.github/workflows/ios-signed.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-signed-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  signed:
+    runs-on: macos-15
+    timeout-minutes: 45
+    environment: ios-signing
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Signing paths
+        run: |
+          echo "KEYCHAIN=$RUNNER_TEMP/kervan-signing.keychain-db" >> "$GITHUB_ENV"
+          echo "SIGNING_DIR=$RUNNER_TEMP/signing" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      # Tests already ran in ios.yml on the same sources; build only.
+      - name: Fetch pinned engine sources
+        run: mobile/core/third_party/fetch.sh
+
+      - name: Build KervanCore.xcframework
+        run: mobile/ios/scripts/build-core.sh
+
+      - name: Install XcodeGen 2.48.0
+        run: |
+          curl -sSL --retry 3 -o "$RUNNER_TEMP/xcodegen.zip" \
+            https://github.com/yonaskolb/XcodeGen/releases/download/2.48.0/xcodegen.zip
+          echo "620c9f0dc10849f94728ab5df52d225ebab8187439dd6fee1925e59e80dff892  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+
+      - name: Generate Xcode project
+        working-directory: mobile/ios
+        run: xcodegen generate --spec project.yml
+
+      # Temporary keychain with a random password; deleted in the last step.
+      # Profile metadata is checked here so a wrong profile fails early with a
+      # clear message instead of a long codesign error.
+      - name: Install signing material
+        env:
+          P12_BASE64: ${{ secrets.IOS_DEV_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.IOS_DEV_P12_PASSWORD }}
+          APP_PROFILE_BASE64: ${{ secrets.IOS_APP_PROFILE_BASE64 }}
+          TUNNEL_PROFILE_BASE64: ${{ secrets.IOS_TUNNEL_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+          umask 077
+          for v in P12_BASE64 P12_PASSWORD APP_PROFILE_BASE64 TUNNEL_PROFILE_BASE64; do
+            [ -n "${!v}" ] || { echo "secret for $v is empty"; exit 1; }
+          done
+          # Xcode 16 reads UserData; older tools read MobileDevice. Install to both.
+          profile_dirs=("$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" "$HOME/Library/MobileDevice/Provisioning Profiles")
+          mkdir -p "$SIGNING_DIR" "${profile_dirs[@]}"
+          printf '%s' "$P12_BASE64" | base64 -D > "$SIGNING_DIR/dev.p12"
+
+          kc_pass=$(openssl rand -hex 24)
+          security create-keychain -p "$kc_pass" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$kc_pass" "$KEYCHAIN"
+          security import "$SIGNING_DIR/dev.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN" >/dev/null 2>&1 \
+            || { echo "certificate import failed (wrong password, or .p12 not exported with -legacy)"; exit 1; }
+          security set-key-partition-list -S apple-tool:,apple: -k "$kc_pass" "$KEYCHAIN" >/dev/null 2>&1 \
+            || { echo "keychain access setup failed"; exit 1; }
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm -f "$SIGNING_DIR/dev.p12"
+          count=$(security find-identity -v -p codesigning "$KEYCHAIN" | grep -c 'Apple Development' || true)
+          # Public log: hide the owner's name, certificate ID and hash in any later error.
+          security find-identity -p codesigning "$KEYCHAIN" | sed -nE 's/^ *[0-9]+\) ([0-9A-F]{40}) "(.*)".*$/\1|\2/p' | sort -u |
+            while IFS='|' read -r hash cn; do
+              name=${cn#*: }
+              for v in "$hash" "$cn" "${name% (*}"; do echo "::add-mask::$v"; done
+              id=${cn##*(}; echo "::add-mask::${id%)}"
+            done
+          [ "$count" -ge 1 ] || { echo "no valid Apple Development identity in the .p12"; exit 1; }
+
+          install_profile() { # base64 bundle_id env_var
+            local raw="$SIGNING_DIR/$3.mobileprovision" plist="$SIGNING_DIR/$3.plist"
+            printf '%s' "$1" | base64 -D > "$raw"
+            security cms -D -i "$raw" > "$plist" 2>/dev/null || { echo "$3: profile cannot be decoded"; exit 1; }
+            local uuid team appid ne
+            uuid=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$plist")
+            team=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$plist")
+            appid=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$plist")
+            ne=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.developer.networking.networkextension' "$plist" 2>/dev/null || true)
+            echo "::add-mask::$team"
+            for key in Name TeamName; do
+              v=$(/usr/libexec/PlistBuddy -c "Print :$key" "$plist" 2>/dev/null || true)
+              [ -z "$v" ] || echo "::add-mask::$v"
+            done
+            [ "$appid" = "$team.$2" ] || { echo "$3: profile is for another App ID (expected <team>.$2)"; exit 1; }
+            grep -q packet-tunnel-provider <<<"$ne" || { echo "$3: profile lacks Network Extensions (packet-tunnel-provider)"; exit 1; }
+            /usr/libexec/PlistBuddy -c 'Print :ProvisionedDevices' "$plist" >/dev/null 2>&1 \
+              || { echo "$3: not a development/ad-hoc profile (no registered devices)"; exit 1; }
+            for d in "${profile_dirs[@]}"; do cp "$raw" "$d/$uuid.mobileprovision"; done
+            echo "$3=$uuid" >> "$GITHUB_ENV"
+            echo "KV_TEAM=$team" >> "$GITHUB_ENV"
+            echo "$3: ok ($2)"
+          }
+          install_profile "$APP_PROFILE_BASE64" dev.kervan.dpi KV_APP_PROFILE
+          install_profile "$TUNNEL_PROFILE_BASE64" dev.kervan.dpi.tunnel KV_TUNNEL_PROFILE
+
+      # -quiet keeps signing identity names (the owner's legal name on an
+      # Individual account) out of the public log; errors still print.
+      - name: Build signed for iPhone (development)
+        working-directory: mobile/ios
+        run: |
+          set -o pipefail
+          xcodebuild build -quiet \
+            -project KervanDPI.xcodeproj -scheme KervanDPI -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="$KV_TEAM" \
+            CODE_SIGN_IDENTITY="Apple Development" \
+            KV_APP_PROFILE="$KV_APP_PROFILE" \
+            KV_TUNNEL_PROFILE="$KV_TUNNEL_PROFILE" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN"
+
+      - name: Verify signature and entitlements
+        working-directory: mobile/ios/build/DerivedData/Build/Products/Release-iphoneos
+        run: |
+          set -euo pipefail
+          codesign --verify --deep --strict KervanDPI.app
+          for b in KervanDPI.app KervanDPI.app/PlugIns/KervanTunnel.appex; do
+            ent=$(codesign -d --entitlements :- "$b" 2>/dev/null)
+            grep -q packet-tunnel-provider <<<"$ent" || { echo "$b: missing packet-tunnel-provider entitlement"; exit 1; }
+            [ -f "$b/embedded.mobileprovision" ] || { echo "$b: no embedded profile"; exit 1; }
+            echo "$b: signed, packet-tunnel-provider present"
+          done
+
+      - name: Package and encrypt IPA
+        env:
+          IPA_PASSPHRASE: ${{ secrets.IOS_IPA_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          [ "${#IPA_PASSPHRASE}" -ge 16 ] || { echo "IOS_IPA_PASSPHRASE is shorter than 16 characters"; exit 1; }
+          out="$RUNNER_TEMP/ipa"
+          mkdir -p "$out/Payload"
+          cp -R mobile/ios/build/DerivedData/Build/Products/Release-iphoneos/KervanDPI.app "$out/Payload/"
+          (cd "$out" && zip -qry KervanDPI.ipa Payload)
+          "$(brew --prefix openssl@3)/bin/openssl" enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -pass env:IPA_PASSPHRASE -in "$out/KervanDPI.ipa" -out "$RUNNER_TEMP/KervanDPI.ipa.enc"
+          shasum -a 256 "$out/KervanDPI.ipa"
+
+      - name: Upload encrypted IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: kervan-dpi-ios-dev-ipa-encrypted
+          path: ${{ runner.temp }}/KervanDPI.ipa.enc
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Remove signing material
+        if: always()
+        run: |
+          security delete-keychain "$KEYCHAIN" 2>/dev/null || true
+          rm -rf "$SIGNING_DIR" "$RUNNER_TEMP/ipa" "$RUNNER_TEMP/KervanDPI.ipa.enc" \
+            "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" \
+            "$HOME/Library/MobileDevice/Provisioning Profiles"

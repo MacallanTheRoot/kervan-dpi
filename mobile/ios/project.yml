@@ -27,6 +27,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.kervan.dpi
         CODE_SIGN_ENTITLEMENTS: KervanDPI/KervanDPI.entitlements
+        PROVISIONING_PROFILE_SPECIFIER: $(KV_APP_PROFILE) # empty unless ios-signed.yml sets it
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Kervan DPI
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
@@ -44,6 +45,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: dev.kervan.dpi.tunnel
         INFOPLIST_FILE: KervanTunnel/Info.plist
         CODE_SIGN_ENTITLEMENTS: KervanTunnel/KervanTunnel.entitlements
+        PROVISIONING_PROFILE_SPECIFIER: $(KV_TUNNEL_PROFILE)
   KervanDPITests:
     type: bundle.unit-test
     platform: iOS

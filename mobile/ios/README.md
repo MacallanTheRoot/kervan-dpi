@@ -27,7 +27,7 @@ SwiftUI app (KervanDPI)                     Packet Tunnel extension (KervanTunne
 | `KervanTunnel/` | `PacketTunnelProvider`, `KervanEngine`, `EngineError`, Info.plist, entitlements |
 | `KervanDPI/` | SwiftUI app, `TunnelController`, `AccessCheck`, assets (camel, accent #315FA7) |
 | `Shared/TunnelIdentity.swift` | Bundle IDs and defaults, in both targets |
-| `project.yml` | XcodeGen spec; set `DEVELOPMENT_TEAM` |
+| `project.yml` | XcodeGen spec; signing settings come from `ios-signed.yml` |
 
 ## Build without a Mac (GitHub Actions)
 
@@ -60,18 +60,58 @@ Signing needs an Apple Developer team. The App IDs `dev.kervan.dpi` and `dev.ker
 
 ## From unsigned build to iPhone, without a Mac
 
-Not set up yet. Each step needs the owner's action or approval.
+The unsigned build is green (run 45241078722). `.github/workflows/ios-signed.yml` turns it into a **development-signed IPA** for registered devices. It starts on a push that changes that file on `ios/first-cloud-build`, then waits for the reviewer of the `ios-signing` environment, which holds its five secrets. Signing proves only that iOS will accept the install. It does not prove that the VPN works, that bypass works, or that Apple would distribute the app.
 
-1. **Apple Developer Program** membership. The owner has a paid **Individual** membership, which is enough for development and ad-hoc signing with the Network Extension (packet tunnel) capability. A free Personal Team cannot sign that entitlement. **App Store distribution is blocked for an Individual account.** Guideline 5.4, verbatim: "Apps offering VPN services must utilize the NEVPNManager API and may only be offered by developers enrolled as an organization." It also says non-compliant apps are "blocked from installing via alternative distribution". Whether TestFlight external testing counts as "offering" falls under the same review and is not confirmed.
-2. Create the App IDs `dev.kervan.dpi` and `dev.kervan.dpi.tunnel` in the developer portal, both with the **Network Extensions** capability. The packet tunnel value is self-service; no special request is needed.
-3. Register the iPhone's UDID. On Linux: `sudo apt install libimobiledevice-utils`, then `idevice_id -l`.
-4. Create an Apple Distribution (or Development) certificate. The CSR can be generated with `openssl`. Then create an **ad-hoc** provisioning profile per target.
-5. Store the .p12, its password and both profiles as GitHub Actions secrets. Then add a separate, manually triggered signed job (`xcodebuild archive` + `-exportArchive`, ad-hoc). That job has not been written: it needs credentials, and credentials need your approval.
-6. Install from Linux with `ideviceinstaller -i KervanDPI.ipa`. Read the extension logs with `idevicesyslog | grep dev.kervan.dpi`.
+What signing needs:
 
-TestFlight is the alternative to steps 3–6. It needs an App Store Connect upload (an API key secret). Builds for internal testers skip Beta App Review; external testers need it.
+| Item | Value |
+|---|---|
+| App IDs (explicit) | `dev.kervan.dpi`, `dev.kervan.dpi.tunnel`, both with **Network Extensions** enabled |
+| Entitlement (both targets) | `com.apple.developer.networking.networkextension = [packet-tunnel-provider]` |
+| App Groups, Keychain sharing, Personal VPN | not used; do not enable them |
+| Certificate | one **Apple Development** certificate (private key stays on your Linux machine and in the .p12) |
+| Profiles | two **iOS App Development** profiles, one per App ID, each containing that certificate and the iPhone |
+| Device | iPhone UDID registered; iOS 17.0 or newer; Developer Mode on |
 
-Fallbacks that were considered: **Expo EAS Build** only builds Expo/React Native projects, so using it would mean wrapping or rewriting the native app. It adds nothing here beyond managing credentials. **Codemagic** and **Bitrise** build native Xcode projects directly. They are a reasonable second option if GitHub's macOS runners become unsuitable.
+A paid Individual account can do all of this: the packet tunnel value of Network Extensions is self-service for paid teams. A free Personal Team cannot. If the portal says `dev.kervan.dpi` is already taken, the identifiers must change in `project.yml` and `Shared/TunnelIdentity.swift` together (`check_project.py` enforces the match).
+
+Steps. Keep every file under a private folder **outside** the repository, for example `~/kervan-signing` (`chmod 700`).
+
+1. iPhone UDID: `sudo apt install libimobiledevice-utils ideviceinstaller usbmuxd`. Connect the phone, tap Trust, run `idevicepair pair` and then `idevice_id -l`. Add the UDID at developer.apple.com → Certificates, IDs & Profiles → Devices.
+2. Identifiers → `+` → App IDs → App → explicit `dev.kervan.dpi` → tick **Network Extensions**. Repeat for `dev.kervan.dpi.tunnel`.
+3. Certificate, on Linux:
+   ```
+   openssl genrsa -out kervan-dev.key 2048
+   openssl req -new -key kervan-dev.key -out kervan-dev.csr -subj "/CN=Kervan DPI Dev"
+   ```
+   Certificates → `+` → **Apple Development** → upload `kervan-dev.csr` → download `development.cer`. Then:
+   ```
+   openssl x509 -inform DER -in development.cer -out kervan-dev.pem
+   openssl pkcs12 -export -legacy -inkey kervan-dev.key -in kervan-dev.pem -out kervan-dev.p12
+   ```
+   `-legacy` matters: macOS `security import` rejects the OpenSSL 3 default .p12 encryption.
+4. Profiles → `+` → **iOS App Development** → App ID `dev.kervan.dpi` → the certificate → the iPhone. Download it. Repeat for `dev.kervan.dpi.tunnel`.
+5. Secrets: needs your approval. Create the `ios-signing` environment (Settings → Environments; optionally add yourself as a required reviewer). Values are read from files or stdin, so they never reach shell history:
+   ```
+   gh secret set IOS_DEV_P12_BASE64 --env ios-signing < <(base64 -w0 kervan-dev.p12)
+   gh secret set IOS_DEV_P12_PASSWORD --env ios-signing          # prompts
+   gh secret set IOS_APP_PROFILE_BASE64 --env ios-signing < <(base64 -w0 <app>.mobileprovision)
+   gh secret set IOS_TUNNEL_PROFILE_BASE64 --env ios-signing < <(base64 -w0 <tunnel>.mobileprovision)
+   gh secret set IOS_IPA_PASSPHRASE --env ios-signing            # prompts
+   ```
+6. Run: push a change to `ios-signed.yml` on `ios/first-cloud-build`, then approve the waiting deployment in the Actions tab. (`gh workflow run` needs the file on `main`.) The job checks that each profile matches its App ID and carries packet-tunnel-provider, signs, verifies the signatures and entitlements, and uploads the IPA **encrypted** (1-day retention). The embedded profile contains your name and the UDID, and this repository is public.
+7. Install:
+   ```
+   gh run download <run-id> -n kervan-dpi-ios-dev-ipa-encrypted
+   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in KervanDPI.ipa.enc -out KervanDPI.ipa
+   idevicedevmodectl reveal      # then Settings → Privacy & Security → Developer Mode → On, reboot
+   ideviceinstaller -i KervanDPI.ipa
+   idevicesyslog | grep -i kervan
+   ```
+
+The certificate and profiles are valid for one year. Adding another device means regenerating both profiles.
+
+TestFlight is the alternative to steps 1, 6 and 7. It needs a Distribution certificate, App Store profiles and an App Store Connect API key. Builds for internal testers skip Beta App Review; external testers need it, and guideline 5.4 applies there.
 
 ## Device test plan (iPhone 14 Pro)
 
