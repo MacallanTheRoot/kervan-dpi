@@ -1,135 +1,154 @@
+<div align="center">
+
+<img src="site/assets/kervan-camel.png" alt="Kervan DPI blue camel logo" width="116" />
+
 # Kervan DPI
 
-![Kervan DPI mavi deve simgesi / blue camel mark](site/assets/kervan-camel.png)
+**Yol Açık, Kervan Yürür.**  
+*The road stays open, the caravan moves on.*
 
-**Yol Açık, Kervan Yürür.**
+Open-source tools for navigating network restrictions caused by Deep Packet Inspection (DPI).
 
-Kervan DPI, Windows ve Linux için açık kaynaklı bir masaüstü uygulamasıdır. DPI kaynaklı erişim kısıtlamalarına yönelik araçları tek arayüzden yönetir. Windows'ta GoodbyeDPI, Linux'ta ise ayrı kurulan SpoofDPI ile çalışır.
+[🌐 Website](https://macallantheroot.github.io/kervan-dpi/) · [📦 Releases](https://github.com/MacallanTheRoot/kervan-dpi/releases) · [🐛 Issues](https://github.com/MacallanTheRoot/kervan-dpi/issues)
 
-[Kaynak kod](https://github.com/MacallanTheRoot/kervan-dpi) · [İndir / Releases](https://github.com/MacallanTheRoot/kervan-dpi/releases) · [Web sitesi (yayına hazırlanıyor)](https://macallantheroot.github.io/kervan-dpi/)
+**[Türkçe](#türkçe) | [English](#english)**
 
-## Türkçe
+</div>
 
-### Windows ve Linux
+> [!IMPORTANT]
+> Kervan DPI is experimental software. Success varies by network and platform. It is not an anonymity service, does not hide your public IP address, and does not guarantee access to any particular website.  
+> Kervan DPI deneysel bir yazılımdır. Başarı ağa ve platforma göre değişir. Anonimlik sağlamaz, genel IP adresinizi gizlemez ve hiçbir siteye erişimi garanti etmez.
 
-**Windows:** Yayımlanmış sürüm, GoodbyeDPI motorunu WinDivert ile çalıştırır. Masaüstü arayüzünden motoru başlatıp durdurabilir, DNS seçimini değiştirebilir, durumu ve etkinlik günlüğünü izleyebilirsiniz. WinDivert için yönetici izni istenebilir.
+---
 
-**Linux:** Yayımlanmış sürüm, ayrıca yüklenmesi gereken SpoofDPI'yi yerel HTTP proxy olarak yönetir. Proxy 127.0.0.1:8080 adresini kullanır; tarayıcı veya diğer uygulamalar bu proxy'yi kullanacak şekilde ayarlanmalıdır. Uygulama sistemin proxy ayarlarını kendiliğinden değiştirmez. İsteğe bağlı şeffaf, sistem genelinde çalışma desteği geliştirilmektedir; mevcut indirmelerde yer almaz.
+<a id="türkçe"></a>
+## 🇹🇷 Türkçe
 
-### Özellikler
+### Kervan DPI nedir?
 
-- **Enable / Disable** ile desteklenen motoru arayüzden başlatma ve durdurma.
-- DNS sağlayıcısı seçimi, bağlantı durumu ve etkinlik günlüğü.
-- Desteklenen masaüstlerinde sistem tepsisi; açık, koyu ve sistem temasına uyumlu görünüm.
-- Windows ve Linux'un farklı çalışma biçimlerini tek bir Qt arayüzünde sunma.
+**Kervan DPI**, bazı ağlarda erişim kısıtlamalarını uygulamak için kullanılan **Derin Paket İncelemesi (DPI)** yöntemlerine karşı yerel çözümler sunan açık kaynaklı bir projedir. Platformlara göre farklı motorlar ve arayüzler kullanır. Amaç, mevcut teknolojileri anlaşılır bir deneyimde birleştirmektir; her ağda çalışan tek bir yöntem sunduğumuz iddia edilmez.
 
-Sonuçlar ağa ve kullanılan motora bağlıdır. Kervan DPI bir VPN, anonimlik, şifreleme veya IP gizleme hizmeti değildir; her ağda erişim sağlayacağını garanti etmez.
+### Platform durumu
 
-### İndirme ve kurulum
-
-[GitHub Releases](https://github.com/MacallanTheRoot/kervan-dpi/releases) sayfasındaki **v1.0.1-rc1 ön sürümü**, Windows x86_64 EXE, Linux amd64 DEB ve Linux amd64 TAR.GZ dosyalarını içerir. Bu yayımlanmış dosyalar eski **GoodbyeDPI Turkey** adlarını taşır; daha yeni Kervan markalı uygulama paketleri henüz yayımlanmamıştır.
-
-| Platform | Yayımlanmış dosya | Kullanım |
+| Platform | Durum | Sürüm / erişim |
 | --- | --- | --- |
-| Windows x86_64 | GoodbyeDPI-Turkey-1.0.1rc1-windows-x86_64.exe | EXE'yi indirin ve çalıştırın. |
-| Debian / Kali Linux amd64 | goodbyedpi-turkey_1.0.1.rc1_amd64.deb | Paketi kurun, ardından uygulamayı açın. |
-| Linux amd64 taşınabilir | GoodbyeDPI-Turkey-1.0.1rc1-linux-amd64.tar.gz | Arşivi açın ve içindeki uygulamayı çalıştırın. |
+| **Android** | ✅ **Herkese açık deneysel beta** | [0.2.0-beta1 sürüm notları](https://github.com/MacallanTheRoot/kervan-dpi/releases/tag/android-v0.2.0-beta1) · [APK indir](https://github.com/MacallanTheRoot/kervan-dpi/releases/download/android-v0.2.0-beta1/Kervan-DPI-Android-0.2.0-beta1-universal.apk) |
+| **Windows** | ✅ **Herkese açık sürüm adayı (RC)** | [v1.0.1-rc2 ve indirmeler](https://github.com/MacallanTheRoot/kervan-dpi/releases/tag/v1.0.1-rc2) |
+| **Linux** | 🛠️ Yeni nesil sürüm geliştirme / test aşamasında | Yeni Kervan Linux paketi henüz yayımlanmadı¹ |
+| **iOS** | 🧪 Gerçek cihazda geliştirme sürümü denendi | Herkese açık IPA / TestFlight yok |
+| **Web sitesi** | ✅ Yayında | [Resmî web sitesi](https://macallantheroot.github.io/kervan-dpi/) |
 
-DEB dosyasını indirdiğiniz dizinde kurmak için:
+¹ Eski [v1.0.1-rc1](https://github.com/MacallanTheRoot/kervan-dpi/releases/tag/v1.0.1-rc1) sürümünde *GoodbyeDPI Turkey* adıyla Linux dosyaları bulunur. Bunlar geliştirilmekte olan yeni Kervan Linux motorunun yayımlanmış sürümü **değildir**.
 
-~~~sh
-sudo apt install ./goodbyedpi-turkey_1.0.1.rc1_amd64.deb
-goodbyedpi-turkey
-~~~
+### Android kurulumu
 
-Linux'ta [SpoofDPI](https://github.com/xvzc/SpoofDPI) ayrıca kurulmalı ve çalıştırılabilir dosyası uygulamanın bulabileceği bir konumda olmalıdır. Bir yöntem, Go kuruluysa şudur:
+**Gereksinimler:** Android 10 veya üzeri; **arm64-v8a** ya da **x86_64**. 32-bit ARM desteklenmez.
 
-~~~sh
-go install github.com/xvzc/SpoofDPI/cmd/spoofdpi@v0.12.0
-~~~
+1. [İmzalı Android beta APK'sını indirin](https://github.com/MacallanTheRoot/kervan-dpi/releases/download/android-v0.2.0-beta1/Kervan-DPI-Android-0.2.0-beta1-universal.apk).
+2. İndirme bütünlüğünü sürüm sayfasındaki `SHA256SUMS` ile kontrol edin.
+3. APK'yı açıp Android'in kurulum iznini onaylayın. İşiniz bitince tarayıcıya verdiğiniz bilinmeyen uygulama yükleme iznini geri alabilirsiniz.
+4. Uygulamada **Aç** düğmesine dokunun ve Android'in VPN iznini onaylayın.
 
-Ardından kullanacağınız tarayıcıyı veya uygulamayı 127.0.0.1:8080 HTTP proxy'sine yönlendirin. Yayımlanmış paketlere ilişkin ek notlar için [Linux paketleme belgesine](docs/packaging-rc.md) bakın. İndirme sayfasındaki SHA256SUMS dosyasıyla dosyaların bütünlüğünü doğrulayabilirsiniz.
+**Android neden VPN izni istiyor?** Kervan, Android `VpnService` arayüzünü trafiği **cihazın üzerindeki yerel DPI motoruna** yönlendirmek için kullanır; uzak bir VPN sunucusuna bağlandığını iddia etmez. Aynı anda yalnızca bir Android VPN etkin olabilir.
 
-### Teknik yapı
+Daha önce geliştirme amaçlı **debug** derlemesi kurduysanız imza uyuşmazlığı nedeniyle doğrudan güncelleme başarısız olabilir. Eski uygulamayı kaldırmak yerel ayarlarını silebilir; önce [sürüm notlarını](https://github.com/MacallanTheRoot/kervan-dpi/releases/tag/android-v0.2.0-beta1) okuyun.
 
-Arayüz Python, PySide6 ve Qt Widgets ile yazılmıştır. Windows sürümü GoodbyeDPI ve WinDivert kullanır; Linux sürümü ise kullanıcı oturumunda çalışan harici SpoofDPI proxy'sini yönetir. Bu motorların izinleri ve ağdaki etkileri farklıdır. Geliştirilmekte olan şeffaf Linux desteği, yayımlanmış proxy sürümünden ayrı bir çalışma yoludur.
+### Windows kurulumu
 
-Eski paket ve ayar kimlikleri uyumluluk için korunur: Linux komutu ve paket adı goodbyedpi-turkey, Linux ayar yolu $XDG_CONFIG_HOME/goodbyedpi-turkey/config.json (XDG_CONFIG_HOME tanımlı değilse ~/.config/goodbyedpi-turkey/config.json), Windows ayar yolu %APPDATA%\GoodbyeDPI-Turkey\config.json.
+1. [v1.0.1-rc2 sürüm sayfasını](https://github.com/MacallanTheRoot/kervan-dpi/releases/tag/v1.0.1-rc2) açın.
+2. Windows x64 için `Kervan-DPI.exe` veya taşınabilir ZIP'i indirin.
+3. Yayımlanan SHA-256 kontrol dosyasıyla indirmeyi doğrulayın; ardından uygulamayı çalıştırın.
 
-### Neden Kervan?
+Windows sürümü **GoodbyeDPI** ve **WinDivert** bileşenlerini içerir ve yönetici yetkisi gerektirebilir. Bu bir **release candidate**'tır, kararlı sürüm değildir. EXE **dijital olarak imzalanmamıştır**; Windows güvenlik uyarısı gösterebilir. Otomatik testler başarılı olsa da bu derlemenin kapsamlı gerçek Windows ortamı doğrulaması tamamlanmamıştır.
 
-Bir kervan, yolu kapanınca yolculuğu bırakmaz; ilerlemek için başka bir yol arar. Kervan adı, DPI kaynaklı erişim kısıtlamaları karşısında çözüm arama kararlılığını anlatır. **Yol Açık, Kervan Yürür.**
+### Diğer platformlar
 
-### Açık kaynak ve katkı
+**Linux:** Yeni uygulama yolu yerel test ve geliştirme aşamasındadır; henüz indirilebilir güncel Kervan Linux sürümü yoktur. Eski SpoofDPI tabanlı paketleri yeni sistem geneli motorla karıştırmayın.
 
-Kaynak kodu [GitHub deposunda](https://github.com/MacallanTheRoot/kervan-dpi) inceleyebilir, hata bildirimlerini ve önerileri [Issues](https://github.com/MacallanTheRoot/kervan-dpi/issues) üzerinden paylaşabilirsiniz. Geliştirici: [MacallanTheRoot](https://github.com/MacallanTheRoot).
+**iOS:** iPhone 14 Pro üzerinde yerel bir geliştirme sürümü denenmiştir; ancak DPI engelini aşma başarısı bu cihazda kanıtlanmamıştır. Genel dağıtıma uygun IPA veya TestFlight bağlantısı yayımlanmamıştır.
 
-Uygulama kodu [MIT lisansı](LICENSE) altındadır. GoodbyeDPI, WinDivert ve SpoofDPI bağımsız projelerdir; geliştirilmekte olan Linux yolunda kullanılan [Zapret2](https://github.com/bol-van/zapret2) de ayrı bir upstream projedir. Her birinin kendi lisansı geçerlidir. [Üçüncü taraf bildirimleri](THIRD_PARTY_NOTICES.md), [Qt/PySide6 LGPL kaynak ve yeniden bağlama bilgileri](docs/qt-lgpl-compliance.md) ve [web sitesi kaynak notları](site/README.md) ayrıca sağlanır.
+### Gizlilik ve sınırlar
 
-Web sitesinde kullanılan GSAP, uygulamanın MIT lisansına dahil değildir; [GSAP Standard License bildirimi](site/vendor/gsap/NOTICE.md) ayrıdır. Mavi deve görseli proje sahibinin isteğiyle bu proje için ChatGPT üzerinden üretilmiş ve onaylanmıştır; burada MIT lisanslı olduğu iddia edilmez.
+- **Her ağda çalışacağı garanti değildir.** Android'de belirli bir engelli site için kısıtlı sayıda ağda erişim gözlenmiştir; bu evrensel başarı anlamına gelmez.
+- **Anonimlik sağlamaz, IP adresinizi gizlemez ve trafiğe ek uçtan uca şifreleme getirmez.**
+- **Android VPN izni**, yalnızca yerel paket işleme yolunun bir parçasıdır; başka bir VPN aynı anda etkin olamaz.
+- Android beta için QUIC/UDP, çalışırken ağ değiştirme, motor çökmesinden kurtulma ve çok uzun süreli kullanım yeterince doğrulanmamıştır.
+- Android'deki yerel SOCKS5 dinleyicisinin kimlik doğrulaması yoktur; aynı cihazdaki başka uygulamalar, motor çalışırken bu yerel adrese bağlanabilir.
+- Bu projedeki her platformun teknik yapısı, kapsamı ve sürüm olgunluğu farklıdır.
 
-## English
+Android'in ayrıntılı teknik notları ve derleme talimatları: [Android kaynak ve README](https://github.com/MacallanTheRoot/kervan-dpi/blob/android-v0.2.0-beta1/mobile/README.md).
 
-### Overview
+### Açık kaynak, lisans ve katkı
 
-Kervan DPI is an open-source desktop application for Windows and Linux. It brings controls for DPI circumvention tools into one interface: GoodbyeDPI on Windows and a separately installed SpoofDPI proxy on Linux.
+Kervan DPI'ın proje kodu [MIT lisansı](LICENSE) kapsamında sunulur. Dahil edilen veya bağlantı verilen **GoodbyeDPI, WinDivert, Qt/PySide6, GSAP ve diğer üçüncü taraf bileşenler** kendi lisans ve kullanım koşullarına tabidir. [Masaüstü üçüncü taraf bildirimleri](THIRD_PARTY_NOTICES.md) ve [Android beta üçüncü taraf bildirimleri](https://github.com/MacallanTheRoot/kervan-dpi/releases/download/android-v0.2.0-beta1/THIRD-PARTY-NOTICES-Android.txt) ayrı sağlanır. Mavi deve marka görselinin MIT kapsamında lisanslandığı iddia edilmez.
 
-[Source code](https://github.com/MacallanTheRoot/kervan-dpi) · [Downloads](https://github.com/MacallanTheRoot/kervan-dpi/releases) · [Website (publication in preparation)](https://macallantheroot.github.io/kervan-dpi/)
+Geliştirici: **[MacallanTheRoot](https://github.com/MacallanTheRoot)**. Hata bildirimi, öneri ve katkılar için [GitHub Issues](https://github.com/MacallanTheRoot/kervan-dpi/issues) sayfasını kullanabilirsiniz.
 
-### Windows and Linux
+**Yol Açık, Kervan Yürür.** 🐪
 
-**Windows:** The published build runs GoodbyeDPI with WinDivert. The desktop interface lets you start and stop the engine, choose DNS settings, and view status and activity. WinDivert may require administrator permission.
+---
 
-**Linux:** The published build manages SpoofDPI as a local HTTP proxy. Install SpoofDPI separately, then configure each browser or application that should use the proxy at 127.0.0.1:8080. Kervan DPI does not change system proxy settings automatically. Optional transparent, system-wide support is in development and is not part of the current downloads.
+<a id="english"></a>
+## 🇬🇧 English
 
-### Features
+### What is Kervan DPI?
 
-- Start and stop the supported engine with **Enable / Disable**.
-- Choose a DNS provider and inspect status and the activity log.
-- Use the system tray on supported desktops and select light, dark, or system appearance.
-- Manage the platform's engine through a PySide6 / Qt Widgets desktop interface.
+**Kervan DPI** is an open-source project offering local approaches to restrictions enforced using **Deep Packet Inspection (DPI)** on some networks. Different platforms use different engines and interfaces. The goal is to make these technologies easier to use—not to claim one technique works everywhere.
 
-Results depend on the network and engine. Kervan DPI is not a VPN or an anonymity, encryption, or IP masking service, and it cannot guarantee access on every network.
+### Platform status
 
-### Downloads and installation
-
-The [v1.0.1-rc1 prerelease](https://github.com/MacallanTheRoot/kervan-dpi/releases) provides a Windows x86_64 EXE, Linux amd64 DEB, and Linux amd64 TAR.GZ. Their historical **GoodbyeDPI Turkey** filenames remain unchanged. Newer Kervan-branded application binaries have not been published.
-
-| Platform | Published file | Use |
+| Platform | Status | Version / access |
 | --- | --- | --- |
-| Windows x86_64 | GoodbyeDPI-Turkey-1.0.1rc1-windows-x86_64.exe | Download and run the EXE. |
-| Debian / Kali Linux amd64 | goodbyedpi-turkey_1.0.1.rc1_amd64.deb | Install the package, then launch the app. |
-| Portable Linux amd64 | GoodbyeDPI-Turkey-1.0.1rc1-linux-amd64.tar.gz | Extract the archive and run the included application. |
+| **Android** | ✅ **Public experimental beta** | [0.2.0-beta1 release notes](https://github.com/MacallanTheRoot/kervan-dpi/releases/tag/android-v0.2.0-beta1) · [Download APK](https://github.com/MacallanTheRoot/kervan-dpi/releases/download/android-v0.2.0-beta1/Kervan-DPI-Android-0.2.0-beta1-universal.apk) |
+| **Windows** | ✅ **Public release candidate (RC)** | [v1.0.1-rc2 and downloads](https://github.com/MacallanTheRoot/kervan-dpi/releases/tag/v1.0.1-rc2) |
+| **Linux** | 🛠️ Next-generation build under development / testing | No current Kervan Linux package released¹ |
+| **iOS** | 🧪 Development build tested on a physical device | No public IPA or TestFlight release |
+| **Website** | ✅ Live | [Official website](https://macallantheroot.github.io/kervan-dpi/) |
 
-To install the DEB from its download directory:
+¹ Historical Linux binaries are available under the older *GoodbyeDPI Turkey* name in [v1.0.1-rc1](https://github.com/MacallanTheRoot/kervan-dpi/releases/tag/v1.0.1-rc1). They are **not** a public release of the newer Kervan Linux engine.
 
-~~~sh
-sudo apt install ./goodbyedpi-turkey_1.0.1.rc1_amd64.deb
-goodbyedpi-turkey
-~~~
+### Install on Android
 
-Install [SpoofDPI](https://github.com/xvzc/SpoofDPI) separately and make its executable available to the application. With Go installed, one supported method is:
+**Requirements:** Android 10 or later, **arm64-v8a** or **x86_64**. 32-bit ARM is not supported.
 
-~~~sh
-go install github.com/xvzc/SpoofDPI/cmd/spoofdpi@v0.12.0
-~~~
+1. [Download the signed Android beta APK](https://github.com/MacallanTheRoot/kervan-dpi/releases/download/android-v0.2.0-beta1/Kervan-DPI-Android-0.2.0-beta1-universal.apk).
+2. Check the download against the release's `SHA256SUMS` file.
+3. Open the APK and approve Android's installation prompt. You can revoke the browser's install-unknown-apps permission afterward.
+4. Tap **Turn on** in Kervan and approve Android's VPN permission prompt.
 
-Configure the browser or application to use the HTTP proxy at 127.0.0.1:8080. See the [Linux packaging notes](docs/packaging-rc.md) for more on the published package. The release also includes SHA256SUMS for checking downloaded files.
+**Why does Android request VPN permission?** Kervan uses the Android `VpnService` interface to route traffic into a **local DPI engine on the device**. It does not claim to connect to a remote VPN server. Android allows only one active VPN at a time.
 
-### Architecture
+If you previously installed a **debug** build, Android may reject an in-place update due to a different signing certificate. Uninstalling the old build can erase its local settings; read the [release notes](https://github.com/MacallanTheRoot/kervan-dpi/releases/tag/android-v0.2.0-beta1) first.
 
-The interface is built with Python, PySide6, and Qt Widgets. The Windows build uses GoodbyeDPI and WinDivert; the Linux build controls an external SpoofDPI proxy running in the user's session. These engines have different permissions and network behavior. Transparent Linux support under development is separate from the published proxy mode.
+### Install on Windows
 
-Historical installation identifiers remain for compatibility: the Linux command and package are named goodbyedpi-turkey, Linux settings use $XDG_CONFIG_HOME/goodbyedpi-turkey/config.json (or ~/.config/goodbyedpi-turkey/config.json when XDG_CONFIG_HOME is unset), and Windows settings use %APPDATA%\GoodbyeDPI-Turkey\config.json.
+1. Open the [v1.0.1-rc2 release page](https://github.com/MacallanTheRoot/kervan-dpi/releases/tag/v1.0.1-rc2).
+2. Download `Kervan-DPI.exe` or the portable ZIP for Windows x64.
+3. Verify the download using the published SHA-256 checksum file, then run the application.
 
-### Why Kervan?
+The Windows release bundles **GoodbyeDPI** and **WinDivert** and may require administrator privileges. This is a **release candidate**, not a stable release. The EXE is **not code-signed**, so Windows may show a security warning. Automated tests passed, but comprehensive native Windows-session validation of this specific build is still outstanding.
 
-When a caravan finds its road closed, it looks for another way to continue its journey. The name reflects persistence in seeking solutions to DPI-related access restrictions. **Yol Açık, Kervan Yürür.**
+### Other platforms
 
-### Open source and contributions
+**Linux:** The newer implementation remains in local testing and development; no current Kervan Linux binary is publicly available. Do not confuse historical SpoofDPI-based packages with the newer system-wide engine.
 
-Browse the [source](https://github.com/MacallanTheRoot/kervan-dpi) or share bugs and suggestions through [Issues](https://github.com/MacallanTheRoot/kervan-dpi/issues). Developed by [MacallanTheRoot](https://github.com/MacallanTheRoot).
+**iOS:** A development build was tested on an iPhone 14 Pro, but DPI circumvention was not conclusively demonstrated on that device. No publicly distributable IPA or TestFlight link is available.
 
-The application code is [MIT licensed](LICENSE). GoodbyeDPI, WinDivert, and SpoofDPI are independent projects; [Zapret2](https://github.com/bol-van/zapret2), used by the Linux work in development, is another upstream project. Each has its own license. See the [third-party notices](THIRD_PARTY_NOTICES.md), [Qt/PySide6 LGPL source and relinking information](docs/qt-lgpl-compliance.md), and [website source notes](site/README.md).
+### Privacy and limitations
 
-Website GSAP has a separate [Standard License notice](site/vendor/gsap/NOTICE.md) and is not covered by the application's MIT license. The approved blue camel image was generated through ChatGPT for this project at the owner's request; this README does not claim it is MIT licensed.
+- **No universal bypass guarantee.** An access improvement was observed for a particular blocked site on a limited set of Android networks; that does not establish success elsewhere.
+- **No anonymity, IP-address hiding, or additional end-to-end encryption.**
+- On **Android**, VPN permission enables local traffic handling; another VPN cannot be active simultaneously.
+- QUIC/UDP, live network switching, engine-crash recovery, and extended-duration operation are not adequately device-tested in this Android beta.
+- The Android engine's local SOCKS5 listener has no authentication; another app on the same device may be able to connect while it is running.
+- Technical approaches, capabilities, and maturity differ across platforms.
+
+Android technical notes and build instructions: [Android source and README](https://github.com/MacallanTheRoot/kervan-dpi/blob/android-v0.2.0-beta1/mobile/README.md).
+
+### Open source, licenses, and contributing
+
+Kervan DPI's project code is available under the [MIT License](LICENSE). Bundled or referenced **GoodbyeDPI, WinDivert, Qt/PySide6, GSAP, and other third-party components** have their own license terms. See the [desktop third-party notices](THIRD_PARTY_NOTICES.md) and [Android beta third-party notices](https://github.com/MacallanTheRoot/kervan-dpi/releases/download/android-v0.2.0-beta1/THIRD-PARTY-NOTICES-Android.txt). The blue camel brand artwork is not claimed to be MIT-licensed.
+
+Developer: **[MacallanTheRoot](https://github.com/MacallanTheRoot)**. Please use [GitHub Issues](https://github.com/MacallanTheRoot/kervan-dpi/issues) for bug reports, feedback, and contributions.
+
+**Yol Açık, Kervan Yürür.** 🐪
